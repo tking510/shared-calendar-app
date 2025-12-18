@@ -387,13 +387,53 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    test: protectedProcedure.mutation(async ({ ctx }) => {
-      const success = await db.sendTelegramMessage(
-        ctx.user.id,
-        "🔔 <b>テスト通知</b>\n\nTelegram連携が正常に設定されました！"
-      );
-      return { success };
-    }),
+    test: protectedProcedure
+      .input(
+        z.object({
+          botToken: z.string().optional(),
+          chatId: z.string().optional(),
+          threadId: z.string().optional().nullable(),
+        }).optional()
+      )
+      .mutation(async ({ ctx, input }) => {
+        // テスト時は入力値を使用して直接送信（保存前でもテスト可能）
+        const settings = input?.botToken && input?.chatId
+          ? { botToken: input.botToken, chatId: input.chatId, threadId: input.threadId, enabled: true }
+          : await db.getTelegramSettings(ctx.user.id);
+        
+        if (!settings || !settings.botToken || !settings.chatId) {
+          console.log("[Telegram Test] No settings found or incomplete");
+          return { success: false };
+        }
+
+        try {
+          const payload: Record<string, string | number> = {
+            chat_id: settings.chatId,
+            text: "🔔 <b>テスト通知</b>\n\nTelegram連携が正常に設定されました！",
+            parse_mode: "HTML",
+          };
+          
+          if (settings.threadId) {
+            payload.message_thread_id = parseInt(settings.threadId, 10);
+          }
+          
+          console.log("[Telegram Test] Sending to:", { chatId: settings.chatId, threadId: settings.threadId });
+          
+          const response = await fetch(`https://api.telegram.org/bot${settings.botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          
+          const result = await response.json();
+          console.log("[Telegram Test] Response:", result);
+          
+          return { success: response.ok };
+        } catch (error) {
+          console.error("[Telegram Test] Error:", error);
+          return { success: false };
+        }
+      }),
   }),
 });
 

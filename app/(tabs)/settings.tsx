@@ -740,7 +740,7 @@ export default function SettingsScreen() {
                 { backgroundColor: colors.tint, marginTop: 24 },
                 (!botToken || !chatId) && { opacity: 0.5 },
               ]}
-              onPress={() => testTelegramMutation.mutate()}
+              onPress={() => testTelegramMutation.mutate({ botToken: botToken.trim(), chatId: chatId.trim(), threadId: threadId.trim() || null })}
               disabled={!botToken || !chatId || testTelegramMutation.isPending}
             >
               {testTelegramMutation.isPending ? (
