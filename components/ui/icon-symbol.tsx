@@ -34,6 +34,8 @@ const MAPPING = {
   "square.and.arrow.up": "share",
   "link": "link",
   "person.badge.plus": "person-add",
+  "person.fill": "person",
+  "building.2.fill": "business",
 } as IconMapping;
 
 /**

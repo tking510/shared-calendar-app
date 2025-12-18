@@ -267,6 +267,138 @@ describe("Event Validation", () => {
   });
 });
 
+describe("Repeating Events", () => {
+  // Helper function to check if an event occurs on a specific date (including repeats)
+  function isEventOnDate(
+    event: { startTime: Date | string; repeatType?: string },
+    targetDate: Date
+  ): boolean {
+    const eventStart = new Date(event.startTime);
+    const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const eventDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+
+    // If target is before event start, no match
+    if (target < eventDate) return false;
+
+    // If same date, always match
+    if (target.getTime() === eventDate.getTime()) return true;
+
+    // Check repeat type
+    switch (event.repeatType) {
+      case "daily":
+        return true;
+      case "weekly":
+        return target.getDay() === eventStart.getDay();
+      case "monthly":
+        return target.getDate() === eventStart.getDate();
+      case "yearly":
+        return (
+          target.getDate() === eventStart.getDate() &&
+          target.getMonth() === eventStart.getMonth()
+        );
+      default:
+        return false;
+    }
+  }
+
+  it("should match event on its original date", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "none" };
+    expect(isEventOnDate(event, new Date(2024, 0, 15))).toBe(true);
+  });
+
+  it("should not match non-repeating event on different date", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "none" };
+    expect(isEventOnDate(event, new Date(2024, 0, 16))).toBe(false);
+  });
+
+  it("should match daily repeating event on subsequent days", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "daily" };
+    expect(isEventOnDate(event, new Date(2024, 0, 16))).toBe(true);
+    expect(isEventOnDate(event, new Date(2024, 0, 20))).toBe(true);
+    expect(isEventOnDate(event, new Date(2024, 1, 1))).toBe(true);
+  });
+
+  it("should not match daily repeating event before start date", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "daily" };
+    expect(isEventOnDate(event, new Date(2024, 0, 14))).toBe(false);
+  });
+
+  it("should match weekly repeating event on same day of week", () => {
+    // January 15, 2024 is a Monday
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "weekly" };
+    expect(isEventOnDate(event, new Date(2024, 0, 22))).toBe(true); // Next Monday
+    expect(isEventOnDate(event, new Date(2024, 0, 29))).toBe(true); // Two weeks later
+  });
+
+  it("should not match weekly repeating event on different day of week", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "weekly" };
+    expect(isEventOnDate(event, new Date(2024, 0, 16))).toBe(false); // Tuesday
+    expect(isEventOnDate(event, new Date(2024, 0, 21))).toBe(false); // Sunday
+  });
+
+  it("should match monthly repeating event on same day of month", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "monthly" };
+    expect(isEventOnDate(event, new Date(2024, 1, 15))).toBe(true); // February 15
+    expect(isEventOnDate(event, new Date(2024, 5, 15))).toBe(true); // June 15
+  });
+
+  it("should not match monthly repeating event on different day of month", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "monthly" };
+    expect(isEventOnDate(event, new Date(2024, 1, 14))).toBe(false);
+    expect(isEventOnDate(event, new Date(2024, 1, 16))).toBe(false);
+  });
+
+  it("should match yearly repeating event on same date", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "yearly" };
+    expect(isEventOnDate(event, new Date(2025, 0, 15))).toBe(true);
+    expect(isEventOnDate(event, new Date(2030, 0, 15))).toBe(true);
+  });
+
+  it("should not match yearly repeating event on different date", () => {
+    const event = { startTime: new Date(2024, 0, 15), repeatType: "yearly" };
+    expect(isEventOnDate(event, new Date(2025, 0, 16))).toBe(false);
+    expect(isEventOnDate(event, new Date(2025, 1, 15))).toBe(false);
+  });
+});
+
+describe("People and Departments", () => {
+  const mockPeople = [
+    { id: 1, name: "田中太郎", email: "tanaka@example.com", color: "#EF4444" },
+    { id: 2, name: "山田花子", email: null, color: "#3B82F6" },
+  ];
+
+  const mockDepartments = [
+    { id: 1, name: "営業部", color: "#10B981" },
+    { id: 2, name: "開発部", color: "#8B5CF6" },
+  ];
+
+  it("should have valid person data", () => {
+    mockPeople.forEach((person) => {
+      expect(person.name.length).toBeGreaterThan(0);
+      expect(person.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    });
+  });
+
+  it("should have valid department data", () => {
+    mockDepartments.forEach((dept) => {
+      expect(dept.name.length).toBeGreaterThan(0);
+      expect(dept.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    });
+  });
+
+  it("should have unique ids for people", () => {
+    const ids = mockPeople.map((p) => p.id);
+    const uniqueIds = [...new Set(ids)];
+    expect(ids.length).toBe(uniqueIds.length);
+  });
+
+  it("should have unique ids for departments", () => {
+    const ids = mockDepartments.map((d) => d.id);
+    const uniqueIds = [...new Set(ids)];
+    expect(ids.length).toBe(uniqueIds.length);
+  });
+});
+
 describe("Invite Code Generation", () => {
   function generateInviteCode(): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

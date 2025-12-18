@@ -39,12 +39,35 @@ export default function SettingsScreen() {
   const [botToken, setBotToken] = useState("");
   const [chatId, setChatId] = useState("");
 
+  // People management state
+  const [showPersonModal, setShowPersonModal] = useState(false);
+  const [newPersonName, setNewPersonName] = useState("");
+  const [newPersonEmail, setNewPersonEmail] = useState("");
+  const [newPersonColor, setNewPersonColor] = useState(TagColors[0]);
+  const [editingPerson, setEditingPerson] = useState<{ id: number; name: string; email?: string | null; color: string } | null>(null);
+
+  // Department management state
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState("");
+  const [newDepartmentColor, setNewDepartmentColor] = useState(TagColors[2]);
+  const [editingDepartment, setEditingDepartment] = useState<{ id: number; name: string; color: string } | null>(null);
+
   const { data: tags, refetch: refetchTags } = trpc.tags.list.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );
 
   const { data: telegramSettings, refetch: refetchTelegram } = trpc.telegram.get.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  const { data: people, refetch: refetchPeople } = trpc.people.list.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  const { data: departments, refetch: refetchDepartments } = trpc.departments.list.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );
@@ -100,6 +123,62 @@ export default function SettingsScreen() {
         Alert.alert("失敗", "通知の送信に失敗しました。設定を確認してください。");
       }
     },
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  // People mutations
+  const createPersonMutation = trpc.people.create.useMutation({
+    onSuccess: () => {
+      setShowPersonModal(false);
+      setNewPersonName("");
+      setNewPersonEmail("");
+      setNewPersonColor(TagColors[0]);
+      refetchPeople();
+    },
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  const updatePersonMutation = trpc.people.update.useMutation({
+    onSuccess: () => {
+      setShowPersonModal(false);
+      setEditingPerson(null);
+      setNewPersonName("");
+      setNewPersonEmail("");
+      setNewPersonColor(TagColors[0]);
+      refetchPeople();
+    },
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  const deletePersonMutation = trpc.people.delete.useMutation({
+    onSuccess: () => refetchPeople(),
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  // Department mutations
+  const createDepartmentMutation = trpc.departments.create.useMutation({
+    onSuccess: () => {
+      setShowDepartmentModal(false);
+      setNewDepartmentName("");
+      setNewDepartmentColor(TagColors[2]);
+      refetchDepartments();
+    },
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  const updateDepartmentMutation = trpc.departments.update.useMutation({
+    onSuccess: () => {
+      setShowDepartmentModal(false);
+      setEditingDepartment(null);
+      setNewDepartmentName("");
+      setNewDepartmentColor(TagColors[2]);
+      refetchDepartments();
+    },
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  const deleteDepartmentMutation = trpc.departments.delete.useMutation({
+    onSuccess: () => refetchDepartments(),
     onError: (error) => Alert.alert("エラー", error.message),
   });
 
@@ -161,6 +240,93 @@ export default function SettingsScreen() {
         { text: "ログアウト", style: "destructive", onPress: logout },
       ]
     );
+  };
+
+  // Person handlers
+  const handleSavePerson = () => {
+    if (!newPersonName.trim()) {
+      Alert.alert("エラー", "名前を入力してください");
+      return;
+    }
+    if (editingPerson) {
+      updatePersonMutation.mutate({
+        id: editingPerson.id,
+        name: newPersonName.trim(),
+        email: newPersonEmail.trim() || undefined,
+        color: newPersonColor,
+      });
+    } else {
+      createPersonMutation.mutate({
+        name: newPersonName.trim(),
+        email: newPersonEmail.trim() || undefined,
+        color: newPersonColor,
+      });
+    }
+  };
+
+  const handleDeletePerson = (id: number, name: string) => {
+    Alert.alert(
+      "参加者を削除",
+      `「${name}」を削除してもよろしいですか？`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: () => deletePersonMutation.mutate({ id }),
+        },
+      ]
+    );
+  };
+
+  const handleEditPerson = (person: { id: number; name: string; email?: string | null; color: string }) => {
+    setEditingPerson(person);
+    setNewPersonName(person.name);
+    setNewPersonEmail(person.email || "");
+    setNewPersonColor(person.color);
+    setShowPersonModal(true);
+  };
+
+  // Department handlers
+  const handleSaveDepartment = () => {
+    if (!newDepartmentName.trim()) {
+      Alert.alert("エラー", "部署名を入力してください");
+      return;
+    }
+    if (editingDepartment) {
+      updateDepartmentMutation.mutate({
+        id: editingDepartment.id,
+        name: newDepartmentName.trim(),
+        color: newDepartmentColor,
+      });
+    } else {
+      createDepartmentMutation.mutate({
+        name: newDepartmentName.trim(),
+        color: newDepartmentColor,
+      });
+    }
+  };
+
+  const handleDeleteDepartment = (id: number, name: string) => {
+    Alert.alert(
+      "部署を削除",
+      `「${name}」を削除してもよろしいですか？`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: () => deleteDepartmentMutation.mutate({ id }),
+        },
+      ]
+    );
+  };
+
+  const handleEditDepartment = (dept: { id: number; name: string; color: string }) => {
+    setEditingDepartment(dept);
+    setNewDepartmentName(dept.name);
+    setNewDepartmentColor(dept.color);
+    setShowDepartmentModal(true);
   };
 
   if (authLoading) {
@@ -301,6 +467,122 @@ export default function SettingsScreen() {
               <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
             </View>
           </Pressable>
+        </View>
+
+        {/* People Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle">参加者管理</ThemedText>
+            <Pressable
+              style={[styles.addButton, { backgroundColor: colors.tint }]}
+              onPress={() => {
+                setEditingPerson(null);
+                setNewPersonName("");
+                setNewPersonEmail("");
+                setNewPersonColor(TagColors[0]);
+                setShowPersonModal(true);
+              }}
+            >
+              <IconSymbol name="plus" size={16} color="#FFFFFF" />
+              <ThemedText style={{ color: "#FFFFFF", fontSize: 14 }}>追加</ThemedText>
+            </Pressable>
+          </View>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            {people && people.length > 0 ? (
+              people.map((person, index) => (
+                <View key={person.id}>
+                  <View style={styles.tagRow}>
+                    <View style={styles.tagInfo}>
+                      <View style={[styles.tagDot, { backgroundColor: person.color }]} />
+                      <View>
+                        <ThemedText>{person.name}</ThemedText>
+                        {person.email && (
+                          <ThemedText style={{ color: colors.textSecondary, fontSize: 12 }}>
+                            {person.email}
+                          </ThemedText>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.tagActions}>
+                      <Pressable
+                        style={styles.tagActionButton}
+                        onPress={() => handleEditPerson(person)}
+                      >
+                        <IconSymbol name="pencil" size={18} color={colors.tint} />
+                      </Pressable>
+                      <Pressable
+                        style={styles.tagActionButton}
+                        onPress={() => handleDeletePerson(person.id, person.name)}
+                      >
+                        <IconSymbol name="trash.fill" size={18} color={colors.error} />
+                      </Pressable>
+                    </View>
+                  </View>
+                  {index < people.length - 1 && (
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                  )}
+                </View>
+              ))
+            ) : (
+              <ThemedText style={{ color: colors.textSecondary, padding: 16 }}>
+                参加者がいません
+              </ThemedText>
+            )}
+          </View>
+        </View>
+
+        {/* Departments Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle">部署管理</ThemedText>
+            <Pressable
+              style={[styles.addButton, { backgroundColor: colors.tint }]}
+              onPress={() => {
+                setEditingDepartment(null);
+                setNewDepartmentName("");
+                setNewDepartmentColor(TagColors[2]);
+                setShowDepartmentModal(true);
+              }}
+            >
+              <IconSymbol name="plus" size={16} color="#FFFFFF" />
+              <ThemedText style={{ color: "#FFFFFF", fontSize: 14 }}>追加</ThemedText>
+            </Pressable>
+          </View>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            {departments && departments.length > 0 ? (
+              departments.map((dept, index) => (
+                <View key={dept.id}>
+                  <View style={styles.tagRow}>
+                    <View style={styles.tagInfo}>
+                      <View style={[styles.tagDot, { backgroundColor: dept.color }]} />
+                      <ThemedText>{dept.name}</ThemedText>
+                    </View>
+                    <View style={styles.tagActions}>
+                      <Pressable
+                        style={styles.tagActionButton}
+                        onPress={() => handleEditDepartment(dept)}
+                      >
+                        <IconSymbol name="pencil" size={18} color={colors.tint} />
+                      </Pressable>
+                      <Pressable
+                        style={styles.tagActionButton}
+                        onPress={() => handleDeleteDepartment(dept.id, dept.name)}
+                      >
+                        <IconSymbol name="trash.fill" size={18} color={colors.error} />
+                      </Pressable>
+                    </View>
+                  </View>
+                  {index < departments.length - 1 && (
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                  )}
+                </View>
+              ))
+            ) : (
+              <ThemedText style={{ color: colors.textSecondary, padding: 16 }}>
+                部署がありません
+              </ThemedText>
+            )}
+          </View>
         </View>
 
         {/* Logout Button */}
@@ -463,6 +745,137 @@ export default function SettingsScreen() {
               </ThemedText>
             </View>
           </ScrollView>
+        </ThemedView>
+      </Modal>
+
+      {/* Person Modal */}
+      <Modal
+        visible={showPersonModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPersonModal(false)}
+      >
+        <ThemedView style={[styles.modalContainer, { paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={styles.modalHeader}>
+            <Pressable onPress={() => setShowPersonModal(false)}>
+              <ThemedText style={{ color: colors.tint }}>キャンセル</ThemedText>
+            </Pressable>
+            <ThemedText type="defaultSemiBold">
+              {editingPerson ? "参加者を編集" : "新規参加者"}
+            </ThemedText>
+            <Pressable
+              onPress={handleSavePerson}
+              disabled={createPersonMutation.isPending || updatePersonMutation.isPending}
+            >
+              {createPersonMutation.isPending || updatePersonMutation.isPending ? (
+                <ActivityIndicator size="small" color={colors.tint} />
+              ) : (
+                <ThemedText style={{ color: colors.tint, fontWeight: "600" }}>保存</ThemedText>
+              )}
+            </Pressable>
+          </View>
+          <View style={styles.modalContent}>
+            <ThemedText style={{ marginBottom: 8, fontWeight: "600" }}>名前</ThemedText>
+            <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="名前"
+                placeholderTextColor={colors.textDisabled}
+                value={newPersonName}
+                onChangeText={setNewPersonName}
+                autoFocus
+              />
+            </View>
+            <ThemedText style={{ marginTop: 16, marginBottom: 8, fontWeight: "600" }}>メール（任意）</ThemedText>
+            <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="email@example.com"
+                placeholderTextColor={colors.textDisabled}
+                value={newPersonEmail}
+                onChangeText={setNewPersonEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+            <ThemedText style={{ marginTop: 16, marginBottom: 8 }}>カラー</ThemedText>
+            <View style={styles.colorPicker}>
+              {TagColors.map((color) => (
+                <Pressable
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    newPersonColor === color && styles.colorOptionSelected,
+                  ]}
+                  onPress={() => setNewPersonColor(color)}
+                >
+                  {newPersonColor === color && (
+                    <IconSymbol name="checkmark" size={18} color="#FFFFFF" />
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </ThemedView>
+      </Modal>
+
+      {/* Department Modal */}
+      <Modal
+        visible={showDepartmentModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowDepartmentModal(false)}
+      >
+        <ThemedView style={[styles.modalContainer, { paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={styles.modalHeader}>
+            <Pressable onPress={() => setShowDepartmentModal(false)}>
+              <ThemedText style={{ color: colors.tint }}>キャンセル</ThemedText>
+            </Pressable>
+            <ThemedText type="defaultSemiBold">
+              {editingDepartment ? "部署を編集" : "新規部署"}
+            </ThemedText>
+            <Pressable
+              onPress={handleSaveDepartment}
+              disabled={createDepartmentMutation.isPending || updateDepartmentMutation.isPending}
+            >
+              {createDepartmentMutation.isPending || updateDepartmentMutation.isPending ? (
+                <ActivityIndicator size="small" color={colors.tint} />
+              ) : (
+                <ThemedText style={{ color: colors.tint, fontWeight: "600" }}>保存</ThemedText>
+              )}
+            </Pressable>
+          </View>
+          <View style={styles.modalContent}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="部署名"
+                placeholderTextColor={colors.textDisabled}
+                value={newDepartmentName}
+                onChangeText={setNewDepartmentName}
+                autoFocus
+              />
+            </View>
+            <ThemedText style={{ marginTop: 16, marginBottom: 8 }}>カラー</ThemedText>
+            <View style={styles.colorPicker}>
+              {TagColors.map((color) => (
+                <Pressable
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    newDepartmentColor === color && styles.colorOptionSelected,
+                  ]}
+                  onPress={() => setNewDepartmentColor(color)}
+                >
+                  {newDepartmentColor === color && (
+                    <IconSymbol name="checkmark" size={18} color="#FFFFFF" />
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </View>
         </ThemedView>
       </Modal>
     </ThemedView>

@@ -36,7 +36,43 @@ interface EventWithTags {
   title: string;
   startTime: Date;
   endTime: Date;
+  repeatType?: string;
   tags?: { id: number; name: string; color: string }[];
+  people?: { id: number; name: string; color: string }[];
+  departments?: { id: number; name: string; color: string }[];
+}
+
+// Helper function to check if an event occurs on a specific date (including repeats)
+function isEventOnDate(
+  event: { startTime: Date | string; repeatType?: string },
+  targetDate: Date
+): boolean {
+  const eventStart = new Date(event.startTime);
+  const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  const eventDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+
+  // If target is before event start, no match
+  if (target < eventDate) return false;
+
+  // If same date, always match
+  if (target.getTime() === eventDate.getTime()) return true;
+
+  // Check repeat type
+  switch (event.repeatType) {
+    case "daily":
+      return true;
+    case "weekly":
+      return target.getDay() === eventStart.getDay();
+    case "monthly":
+      return target.getDate() === eventStart.getDate();
+    case "yearly":
+      return (
+        target.getDate() === eventStart.getDate() &&
+        target.getMonth() === eventStart.getMonth()
+      );
+    default:
+      return false;
+  }
 }
 
 export default function CalendarScreen() {
@@ -100,15 +136,8 @@ export default function CalendarScreen() {
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear();
 
-      // Find events for this day
-      const dayEvents = (events || []).filter((event) => {
-        const eventDate = new Date(event.startTime);
-        return (
-          eventDate.getDate() === i &&
-          eventDate.getMonth() === month &&
-          eventDate.getFullYear() === year
-        );
-      });
+      // Find events for this day (including repeating events)
+      const dayEvents = (events || []).filter((event) => isEventOnDate(event, date));
 
       days.push({
         date,
@@ -119,6 +148,7 @@ export default function CalendarScreen() {
           title: e.title,
           startTime: new Date(e.startTime),
           endTime: new Date(e.endTime),
+          repeatType: e.repeatType,
         })),
       });
     }
@@ -142,14 +172,7 @@ export default function CalendarScreen() {
 
   // Get events for selected date
   const selectedDateEvents = (events || [])
-    .filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return (
-        eventDate.getDate() === selectedDate.getDate() &&
-        eventDate.getMonth() === selectedDate.getMonth() &&
-        eventDate.getFullYear() === selectedDate.getFullYear()
-      );
-    })
+    .filter((event) => isEventOnDate(event, selectedDate))
     .map((e) => ({
       ...e,
       startTime: new Date(e.startTime),

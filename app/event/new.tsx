@@ -55,6 +55,8 @@ export default function NewEventScreen() {
   const [repeatType, setRepeatType] = useState<"none" | "daily" | "weekly" | "monthly" | "yearly">("none");
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [selectedReminders, setSelectedReminders] = useState<number[]>([15]);
+  const [selectedPeople, setSelectedPeople] = useState<number[]>([]);
+  const [selectedDepartments, setSelectedDepartments] = useState<number[]>([]);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
@@ -64,6 +66,8 @@ export default function NewEventScreen() {
   const [showReminderPicker, setShowReminderPicker] = useState(false);
 
   const { data: tags } = trpc.tags.list.useQuery();
+  const { data: people } = trpc.people.list.useQuery();
+  const { data: departments } = trpc.departments.list.useQuery();
 
   const createMutation = trpc.events.create.useMutation({
     onSuccess: () => {
@@ -90,6 +94,8 @@ export default function NewEventScreen() {
       repeatType,
       tagIds: selectedTags,
       reminderMinutes: selectedReminders,
+      personIds: selectedPeople,
+      departmentIds: selectedDepartments,
     });
   };
 
@@ -110,6 +116,18 @@ export default function NewEventScreen() {
   const toggleReminder = (minutes: number) => {
     setSelectedReminders((prev) =>
       prev.includes(minutes) ? prev.filter((m) => m !== minutes) : [...prev, minutes]
+    );
+  };
+
+  const togglePerson = (personId: number) => {
+    setSelectedPeople((prev) =>
+      prev.includes(personId) ? prev.filter((id) => id !== personId) : [...prev, personId]
+    );
+  };
+
+  const toggleDepartment = (departmentId: number) => {
+    setSelectedDepartments((prev) =>
+      prev.includes(departmentId) ? prev.filter((id) => id !== departmentId) : [...prev, departmentId]
     );
   };
 
@@ -314,6 +332,82 @@ export default function NewEventScreen() {
             {(!tags || tags.length === 0) && (
               <ThemedText style={{ color: colors.textSecondary }}>
                 タグがありません。設定から作成できます。
+              </ThemedText>
+            )}
+          </View>
+        </View>
+
+        {/* People */}
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="person.fill" size={20} color={colors.textSecondary} />
+            <ThemedText type="defaultSemiBold">参加者</ThemedText>
+          </View>
+          <View style={styles.tagsContainer}>
+            {people?.map((person) => (
+              <Pressable
+                key={person.id}
+                style={[
+                  styles.tagChip,
+                  {
+                    backgroundColor: selectedPeople.includes(person.id)
+                      ? person.color + "30"
+                      : colors.background,
+                    borderColor: person.color,
+                  },
+                ]}
+                onPress={() => togglePerson(person.id)}
+              >
+                <View style={[styles.tagDot, { backgroundColor: person.color }]} />
+                <ThemedText style={{ color: selectedPeople.includes(person.id) ? person.color : colors.text }}>
+                  {person.name}
+                </ThemedText>
+                {selectedPeople.includes(person.id) && (
+                  <IconSymbol name="checkmark" size={16} color={person.color} />
+                )}
+              </Pressable>
+            ))}
+            {(!people || people.length === 0) && (
+              <ThemedText style={{ color: colors.textSecondary }}>
+                参加者がいません。設定から追加できます。
+              </ThemedText>
+            )}
+          </View>
+        </View>
+
+        {/* Departments */}
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="building.2.fill" size={20} color={colors.textSecondary} />
+            <ThemedText type="defaultSemiBold">部署</ThemedText>
+          </View>
+          <View style={styles.tagsContainer}>
+            {departments?.map((dept) => (
+              <Pressable
+                key={dept.id}
+                style={[
+                  styles.tagChip,
+                  {
+                    backgroundColor: selectedDepartments.includes(dept.id)
+                      ? dept.color + "30"
+                      : colors.background,
+                    borderColor: dept.color,
+                  },
+                ]}
+                onPress={() => toggleDepartment(dept.id)}
+              >
+                <View style={[styles.tagDot, { backgroundColor: dept.color }]} />
+                <ThemedText style={{ color: selectedDepartments.includes(dept.id) ? dept.color : colors.text }}>
+                  {dept.name}
+                </ThemedText>
+                {selectedDepartments.includes(dept.id) && (
+                  <IconSymbol name="checkmark" size={16} color={dept.color} />
+                )}
+              </Pressable>
+            ))}
+            {(!departments || departments.length === 0) && (
+              <ThemedText style={{ color: colors.textSecondary }}>
+                部署がありません。設定から追加できます。
               </ThemedText>
             )}
           </View>

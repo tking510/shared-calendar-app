@@ -15,6 +15,20 @@
       "when": 1766082178606,
       "tag": "0001_furry_squadron_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1766083417180,
+      "tag": "0002_dapper_tempest",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1766083470454,
+      "tag": "0003_conscious_riptide",
+      "breakpoints": true
     }
   ]
 }

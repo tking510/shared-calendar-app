@@ -122,3 +122,69 @@ export const telegramSettings = mysqlTable("telegram_settings", {
 
 export type TelegramSetting = typeof telegramSettings.$inferSelect;
 export type InsertTelegramSetting = typeof telegramSettings.$inferInsert;
+
+/**
+ * People (contacts) for tagging in events
+ */
+export const people = mysqlTable("people", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // Owner of this contact
+  name: varchar("name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  color: varchar("color", { length: 7 }).notNull().default("#6366F1"), // Hex color for display
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Person = typeof people.$inferSelect;
+export type InsertPerson = typeof people.$inferInsert;
+
+/**
+ * Event-Person relationship (many-to-many)
+ */
+export const eventPeople = mysqlTable("event_people", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  personId: int("personId").notNull(),
+});
+
+export type EventPerson = typeof eventPeople.$inferSelect;
+export type InsertEventPerson = typeof eventPeople.$inferInsert;
+
+/**
+ * Departments for organization
+ */
+export const departments = mysqlTable("departments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // Owner of this department
+  name: varchar("name", { length: 100 }).notNull(),
+  color: varchar("color", { length: 7 }).notNull().default("#10B981"), // Hex color for display
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Department = typeof departments.$inferSelect;
+export type InsertDepartment = typeof departments.$inferInsert;
+
+/**
+ * Event-Department relationship (many-to-many)
+ */
+export const eventDepartments = mysqlTable("event_departments", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  departmentId: int("departmentId").notNull(),
+});
+
+export type EventDepartment = typeof eventDepartments.$inferSelect;
+export type InsertEventDepartment = typeof eventDepartments.$inferInsert;
+
+/**
+ * User's department membership
+ */
+export const userDepartments = mysqlTable("user_departments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  departmentId: int("departmentId").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+
+export type UserDepartment = typeof userDepartments.$inferSelect;
+export type InsertUserDepartment = typeof userDepartments.$inferInsert;
