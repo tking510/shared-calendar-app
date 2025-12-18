@@ -16,7 +16,7 @@ const env = {
   appSlug: 'calendar-app',
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: '',
+  logoUrl: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663031683013/UUJQWXjFHiwONzRx.png',
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,

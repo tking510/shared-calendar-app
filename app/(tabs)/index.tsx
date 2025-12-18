@@ -1,278 +1,517 @@
-import { Image } from "expo-image";
-import { useRouter, Link } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { useEffect, useState, useCallback } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  FlatList,
+  RefreshControl,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { getLoginUrl } from "@/constants/oauth";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { trpc } from "@/lib/trpc";
 
-export default function HomeScreen() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const MONTHS = [
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
+];
+
+interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  events: EventWithTags[];
+}
+
+interface EventWithTags {
+  id: number;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  tags?: { id: number; name: string; color: string }[];
+}
+
+export default function CalendarScreen() {
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+  const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    console.log("[HomeScreen] Auth state:", {
-      hasUser: !!user,
-      loading,
-      isAuthenticated,
-      user: user ? { id: user.id, openId: user.openId, name: user.name, email: user.email } : null,
-    });
-  }, [user, loading, isAuthenticated]);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleLogin = async () => {
-    try {
-      console.log("[Auth] Login button clicked");
-      setIsLoggingIn(true);
-      const loginUrl = getLoginUrl();
-      console.log("[Auth] Generated login URL:", loginUrl);
+  // Get first and last day of month for query
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
 
-      // On web, use direct redirect in same tab
-      // On mobile, use WebBrowser to open OAuth in a separate context
-      if (Platform.OS === "web") {
-        console.log("[Auth] Web platform: redirecting to OAuth in same tab...");
-        window.location.href = loginUrl;
-        return;
-      }
+  const { data: events, isLoading, refetch } = trpc.events.list.useQuery(
+    {
+      startDate: firstDayOfMonth.toISOString(),
+      endDate: lastDayOfMonth.toISOString(),
+    },
+    { enabled: isAuthenticated }
+  );
 
-      // Mobile: Open OAuth URL in browser
-      // The OAuth server will redirect to our deep link (manusapp://oauth/callback?code=...&state=...)
-      console.log("[Auth] Opening OAuth URL in browser...");
-      const result = await WebBrowser.openAuthSessionAsync(
-        loginUrl,
-        undefined, // Deep link is already configured in getLoginUrl, so no need to specify here
-        {
-          preferEphemeralSession: false,
-          showInRecents: true,
-        },
-      );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
-      console.log("[Auth] WebBrowser result:", result);
-      if (result.type === "cancel") {
-        console.log("[Auth] OAuth cancelled by user");
-      } else if (result.type === "dismiss") {
-        console.log("[Auth] OAuth dismissed");
-      } else if (result.type === "success" && result.url) {
-        console.log("[Auth] OAuth session successful, navigating to callback:", result.url);
-        // Extract code and state from the URL
-        try {
-          // Parse the URL - it might be exp:// or a regular URL
-          let url: URL;
-          if (result.url.startsWith("exp://") || result.url.startsWith("exps://")) {
-            // For exp:// URLs, we need to parse them differently
-            // Format: exp://192.168.31.156:8081/--/oauth/callback?code=...&state=...
-            const urlStr = result.url.replace(/^exp(s)?:\/\//, "http://");
-            url = new URL(urlStr);
-          } else {
-            url = new URL(result.url);
-          }
+  // Generate calendar days
+  const generateCalendarDays = (): CalendarDay[] => {
+    const days: CalendarDay[] = [];
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-          const code = url.searchParams.get("code");
-          const state = url.searchParams.get("state");
-          const error = url.searchParams.get("error");
+    // First day of month
+    const firstDay = new Date(year, month, 1);
+    const startingDayOfWeek = firstDay.getDay();
 
-          console.log("[Auth] Extracted params from callback URL:", {
-            code: code?.substring(0, 20) + "...",
-            state: state?.substring(0, 20) + "...",
-            error,
-          });
-
-          if (error) {
-            console.error("[Auth] OAuth error in callback:", error);
-            return;
-          }
-
-          if (code && state) {
-            // Navigate to callback route with params
-            console.log("[Auth] Navigating to callback route with params...");
-            router.push({
-              pathname: "/oauth/callback" as any,
-              params: { code, state },
-            });
-          } else {
-            console.error("[Auth] Missing code or state in callback URL");
-          }
-        } catch (err) {
-          console.error("[Auth] Failed to parse callback URL:", err, result.url);
-          // Fallback: try parsing with regex
-          const codeMatch = result.url.match(/[?&]code=([^&]+)/);
-          const stateMatch = result.url.match(/[?&]state=([^&]+)/);
-
-          if (codeMatch && stateMatch) {
-            const code = decodeURIComponent(codeMatch[1]);
-            const state = decodeURIComponent(stateMatch[1]);
-            console.log("[Auth] Fallback: extracted params via regex, navigating...");
-            router.push({
-              pathname: "/oauth/callback" as any,
-              params: { code, state },
-            });
-          } else {
-            console.error("[Auth] Could not extract code/state from URL");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("[Auth] Login error:", error);
-    } finally {
-      setIsLoggingIn(false);
+    // Days from previous month
+    const prevMonth = new Date(year, month, 0);
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      const date = new Date(year, month - 1, prevMonth.getDate() - i);
+      days.push({
+        date,
+        isCurrentMonth: false,
+        isToday: false,
+        events: [],
+      });
     }
+
+    // Days of current month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    for (let i = 1; i <= daysInMonth; i++) {
+      const date = new Date(year, month, i);
+      const isToday =
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+
+      // Find events for this day
+      const dayEvents = (events || []).filter((event) => {
+        const eventDate = new Date(event.startTime);
+        return (
+          eventDate.getDate() === i &&
+          eventDate.getMonth() === month &&
+          eventDate.getFullYear() === year
+        );
+      });
+
+      days.push({
+        date,
+        isCurrentMonth: true,
+        isToday,
+        events: dayEvents.map((e) => ({
+          id: e.id,
+          title: e.title,
+          startTime: new Date(e.startTime),
+          endTime: new Date(e.endTime),
+        })),
+      });
+    }
+
+    // Days from next month to fill the grid
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      const date = new Date(year, month + 1, i);
+      days.push({
+        date,
+        isCurrentMonth: false,
+        isToday: false,
+        events: [],
+      });
+    }
+
+    return days;
   };
 
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+  const calendarDays = generateCalendarDays();
+
+  // Get events for selected date
+  const selectedDateEvents = (events || [])
+    .filter((event) => {
+      const eventDate = new Date(event.startTime);
+      return (
+        eventDate.getDate() === selectedDate.getDate() &&
+        eventDate.getMonth() === selectedDate.getMonth() &&
+        eventDate.getFullYear() === selectedDate.getFullYear()
+      );
+    })
+    .map((e) => ({
+      ...e,
+      startTime: new Date(e.startTime),
+      endTime: new Date(e.endTime),
+    }))
+    .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+  const goToPreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+  };
+
+  const isSelectedDate = (date: Date) => {
+    return (
+      date.getDate() === selectedDate.getDate() &&
+      date.getMonth() === selectedDate.getMonth() &&
+      date.getFullYear() === selectedDate.getFullYear()
+    );
+  };
+
+  if (authLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.tint} />
       </ThemedView>
-      <ThemedView style={styles.authContainer}>
-        {loading ? (
-          <ActivityIndicator />
-        ) : isAuthenticated && user ? (
-          <ThemedView style={styles.userInfo}>
-            <ThemedText type="subtitle">Logged in as</ThemedText>
-            <ThemedText type="defaultSemiBold">{user.name || user.email || user.openId}</ThemedText>
-            <Pressable onPress={logout} style={styles.logoutButton}>
-              <ThemedText style={styles.logoutText}>Logout</ThemedText>
-            </Pressable>
-          </ThemedView>
-        ) : (
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.loginPrompt}>
+          <IconSymbol name="calendar" size={64} color={colors.tint} />
+          <ThemedText type="title" style={styles.loginTitle}>
+            共有カレンダー
+          </ThemedText>
+          <ThemedText style={[styles.loginText, { color: colors.textSecondary }]}>
+            ログインして予定を管理しましょう
+          </ThemedText>
           <Pressable
-            onPress={handleLogin}
-            disabled={isLoggingIn}
-            style={[styles.loginButton, isLoggingIn && styles.loginButtonDisabled]}
+            style={[styles.loginButton, { backgroundColor: colors.tint }]}
+            onPress={() => router.push("/login")}
           >
-            {isLoggingIn ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={styles.loginText}>Login</ThemedText>
+            <ThemedText style={styles.loginButtonText}>ログイン</ThemedText>
+          </Pressable>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  return (
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerTitle}>
+          <ThemedText type="title">
+            {currentDate.getFullYear()}年 {MONTHS[currentDate.getMonth()]}
+          </ThemedText>
+        </View>
+        <View style={styles.headerButtons}>
+          <Pressable onPress={goToToday} style={styles.todayButton}>
+            <ThemedText style={{ color: colors.tint }}>今日</ThemedText>
+          </Pressable>
+          <Pressable onPress={goToPreviousMonth} style={styles.navButton}>
+            <IconSymbol name="chevron.left" size={24} color={colors.tint} />
+          </Pressable>
+          <Pressable onPress={goToNextMonth} style={styles.navButton}>
+            <IconSymbol name="chevron.right" size={24} color={colors.tint} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Day headers */}
+      <View style={styles.dayHeaders}>
+        {DAYS.map((day, index) => (
+          <View key={day} style={styles.dayHeader}>
+            <ThemedText
+              style={[
+                styles.dayHeaderText,
+                { color: index === 0 ? colors.error : index === 6 ? colors.tint : colors.textSecondary },
+              ]}
+            >
+              {day}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
+
+      {/* Calendar grid */}
+      <View style={styles.calendarGrid}>
+        {calendarDays.map((day, index) => (
+          <Pressable
+            key={index}
+            style={[
+              styles.dayCell,
+              isSelectedDate(day.date) && { backgroundColor: colors.tint + "20" },
+            ]}
+            onPress={() => setSelectedDate(day.date)}
+          >
+            <View
+              style={[
+                styles.dayNumber,
+                day.isToday && { backgroundColor: colors.tint },
+              ]}
+            >
+              <ThemedText
+                style={[
+                  styles.dayText,
+                  !day.isCurrentMonth && { color: colors.textDisabled },
+                  day.isToday && { color: "#FFFFFF" },
+                  index % 7 === 0 && day.isCurrentMonth && !day.isToday && { color: colors.error },
+                  index % 7 === 6 && day.isCurrentMonth && !day.isToday && { color: colors.tint },
+                ]}
+              >
+                {day.date.getDate()}
+              </ThemedText>
+            </View>
+            {/* Event dots */}
+            {day.events.length > 0 && (
+              <View style={styles.eventDots}>
+                {day.events.slice(0, 3).map((event, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.eventDot,
+                      { backgroundColor: event.tags?.[0]?.color || colors.tint },
+                    ]}
+                  />
+                ))}
+              </View>
             )}
           </Pressable>
-        )}
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert("Action pressed")} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+        ))}
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Selected date events */}
+      <View style={[styles.eventsSection, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={styles.eventsSectionHeader}>
+          <ThemedText type="subtitle">
+            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日の予定
+          </ThemedText>
+          <ThemedText style={{ color: colors.textSecondary }}>
+            {selectedDateEvents.length}件
+          </ThemedText>
+        </View>
+
+        {isLoading ? (
+          <ActivityIndicator style={styles.eventsLoading} color={colors.tint} />
+        ) : selectedDateEvents.length === 0 ? (
+          <View style={styles.noEvents}>
+            <ThemedText style={{ color: colors.textSecondary }}>
+              予定はありません
+            </ThemedText>
+          </View>
+        ) : (
+          <FlatList
+            data={selectedDateEvents}
+            keyExtractor={(item) => item.id.toString()}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            renderItem={({ item }) => (
+              <Pressable
+                style={[styles.eventCard, { backgroundColor: colors.card }]}
+                onPress={() => router.push(`/event/${item.id}`)}
+              >
+                <View
+                  style={[
+                    styles.eventColorBar,
+                    { backgroundColor: colors.tint },
+                  ]}
+                />
+                <View style={styles.eventContent}>
+                  <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                    {item.title}
+                  </ThemedText>
+                  <ThemedText style={{ color: colors.textSecondary, fontSize: 14 }}>
+                    {item.startTime.getHours().toString().padStart(2, "0")}:
+                    {item.startTime.getMinutes().toString().padStart(2, "0")} -
+                    {item.endTime.getHours().toString().padStart(2, "0")}:
+                    {item.endTime.getMinutes().toString().padStart(2, "0")}
+                  </ThemedText>
+                </View>
+                <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+              </Pressable>
+            )}
+          />
+        )}
+      </View>
+
+      {/* FAB */}
+      <Pressable
+        style={[styles.fab, { backgroundColor: colors.tint, bottom: insets.bottom + 16 }]}
+        onPress={() => router.push(`/event/new?date=${selectedDate.toISOString()}`)}
+      >
+        <IconSymbol name="plus" size={28} color="#FFFFFF" />
+      </Pressable>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loginPrompt: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  loginTitle: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  loginText: {
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  loginButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    flex: 1,
+  },
+  headerButtons: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  todayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  navButton: {
+    padding: 8,
   },
-  authContainer: {
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+  dayHeaders: {
+    flexDirection: "row",
+    paddingHorizontal: 8,
   },
-  userInfo: {
-    gap: 8,
+  dayHeader: {
+    flex: 1,
     alignItems: "center",
+    paddingVertical: 8,
   },
-  loginButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  loginButtonDisabled: {
-    opacity: 0.6,
-  },
-  loginText: {
-    color: "#fff",
-    fontSize: 16,
+  dayHeaderText: {
+    fontSize: 12,
     fontWeight: "600",
   },
-  logoutButton: {
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    backgroundColor: "rgba(255, 59, 48, 0.1)",
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 8,
   },
-  logoutText: {
-    color: "#FF3B30",
+  dayCell: {
+    width: "14.28%",
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: 4,
+    borderRadius: 8,
+  },
+  dayNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  eventDots: {
+    flexDirection: "row",
+    gap: 2,
+    marginTop: 2,
+  },
+  eventDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  eventsSection: {
+    flex: 1,
+    marginTop: 8,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 16,
+  },
+  eventsSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  eventsLoading: {
+    marginTop: 32,
+  },
+  noEvents: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  eventCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  eventColorBar: {
+    width: 4,
+    height: "100%",
+  },
+  eventContent: {
+    flex: 1,
+    padding: 12,
+  },
+  fab: {
+    position: "absolute",
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });

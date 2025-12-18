@@ -1,0 +1,96 @@
+/**
+ * Reminder notification job
+ * This module handles sending Telegram notifications for upcoming events
+ */
+
+import { getPendingReminders, markReminderNotified, sendTelegramMessage } from "./db";
+
+const REMINDER_LABELS: Record<number, string> = {
+  5: "5分後",
+  15: "15分後",
+  30: "30分後",
+  60: "1時間後",
+  1440: "明日",
+};
+
+function formatEventTime(date: Date): string {
+  return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+}
+
+function formatEventDate(date: Date): string {
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+export async function processReminders(): Promise<{ processed: number; sent: number }> {
+  let processed = 0;
+  let sent = 0;
+
+  try {
+    const pendingReminders = await getPendingReminders();
+    
+    for (const { reminder, event } of pendingReminders) {
+      processed++;
+      
+      const timeLabel = REMINDER_LABELS[reminder.minutesBefore] || `${reminder.minutesBefore}分後`;
+      const eventDate = new Date(event.startTime);
+      
+      const message = `🔔 <b>予定のリマインダー</b>\n\n` +
+        `📅 <b>${event.title}</b>\n` +
+        `⏰ ${formatEventDate(eventDate)} ${formatEventTime(eventDate)}\n` +
+        (event.location ? `📍 ${event.location}\n` : "") +
+        `\n⏳ ${timeLabel}に開始します`;
+
+      const success = await sendTelegramMessage(event.userId, message);
+      
+      if (success) {
+        sent++;
+        console.log(`[Reminder] Sent notification for event ${event.id} to user ${event.userId}`);
+      } else {
+        console.log(`[Reminder] Failed to send notification for event ${event.id} (Telegram not configured or error)`);
+      }
+      
+      // Mark as notified regardless of send success to avoid repeated attempts
+      await markReminderNotified(reminder.id);
+    }
+    
+    return { processed, sent };
+  } catch (error) {
+    console.error("[Reminder] Error processing reminders:", error);
+    return { processed, sent };
+  }
+}
+
+// Run reminder check every minute
+let intervalId: ReturnType<typeof setInterval> | null = null;
+
+export function startReminderJob(): void {
+  if (intervalId) {
+    console.log("[Reminder] Job already running");
+    return;
+  }
+  
+  console.log("[Reminder] Starting reminder job (checking every minute)");
+  
+  // Run immediately on start
+  processReminders().then(({ processed, sent }) => {
+    if (processed > 0) {
+      console.log(`[Reminder] Initial check: processed ${processed}, sent ${sent}`);
+    }
+  });
+  
+  // Then run every minute
+  intervalId = setInterval(async () => {
+    const { processed, sent } = await processReminders();
+    if (processed > 0) {
+      console.log(`[Reminder] Processed ${processed} reminders, sent ${sent} notifications`);
+    }
+  }, 60 * 1000);
+}
+
+export function stopReminderJob(): void {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+    console.log("[Reminder] Stopped reminder job");
+  }
+}
