@@ -378,6 +378,7 @@ export const appRouter = router({
         z.object({
           botToken: z.string().optional(),
           chatId: z.string().optional(),
+          threadId: z.string().optional().nullable(),
           enabled: z.boolean().optional(),
         })
       )

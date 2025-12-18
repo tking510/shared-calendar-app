@@ -115,6 +115,7 @@ export const telegramSettings = mysqlTable("telegram_settings", {
   userId: int("userId").notNull().unique(),
   botToken: varchar("botToken", { length: 100 }),
   chatId: varchar("chatId", { length: 100 }),
+  threadId: varchar("threadId", { length: 100 }), // トピックID（スレッドID）
   enabled: boolean("enabled").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

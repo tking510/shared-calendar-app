@@ -38,6 +38,7 @@ export default function SettingsScreen() {
 
   const [botToken, setBotToken] = useState("");
   const [chatId, setChatId] = useState("");
+  const [threadId, setThreadId] = useState("");
 
   // People management state
   const [showPersonModal, setShowPersonModal] = useState(false);
@@ -77,6 +78,7 @@ export default function SettingsScreen() {
     if (telegramSettings) {
       setBotToken(telegramSettings.botToken || "");
       setChatId(telegramSettings.chatId || "");
+      setThreadId(telegramSettings.threadId || "");
     }
   }, [telegramSettings]);
 
@@ -227,6 +229,7 @@ export default function SettingsScreen() {
     updateTelegramMutation.mutate({
       botToken: botToken.trim() || undefined,
       chatId: chatId.trim() || undefined,
+      threadId: threadId.trim() || null,
       enabled: !!(botToken.trim() && chatId.trim()),
     });
   };
@@ -713,6 +716,23 @@ export default function SettingsScreen() {
                 keyboardType="numeric"
               />
             </View>
+
+            <ThemedText style={{ marginTop: 16, marginBottom: 8, fontWeight: "600" }}>
+              スレッドID（トピックID）- 任意
+            </ThemedText>
+            <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="トピックがあるグループの場合のみ入力"
+                placeholderTextColor={colors.textDisabled}
+                value={threadId}
+                onChangeText={setThreadId}
+                keyboardType="numeric"
+              />
+            </View>
+            <ThemedText style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+              トピックが有効なグループに通知を送る場合に入力してください
+            </ThemedText>
 
             <Pressable
               style={[

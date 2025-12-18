@@ -349,14 +349,21 @@ export async function sendTelegramMessage(userId: number, message: string) {
   }
 
   try {
+    const payload: Record<string, string | number> = {
+      chat_id: settings.chatId,
+      text: message,
+      parse_mode: "HTML",
+    };
+    
+    // スレッドID（トピックID）が設定されている場合は追加
+    if (settings.threadId) {
+      payload.message_thread_id = parseInt(settings.threadId, 10);
+    }
+    
     const response = await fetch(`https://api.telegram.org/bot${settings.botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: settings.chatId,
-        text: message,
-        parse_mode: "HTML",
-      }),
+      body: JSON.stringify(payload),
     });
     return response.ok;
   } catch (error) {
