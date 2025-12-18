@@ -36,6 +36,13 @@
       "when": 1766084297888,
       "tag": "0004_large_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1766085419732,
+      "tag": "0005_clever_puppet_master",
+      "breakpoints": true
     }
   ]
 }

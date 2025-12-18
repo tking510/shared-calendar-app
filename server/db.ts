@@ -17,9 +17,9 @@ import {
   InsertCalendarMember,
   telegramSettings,
   InsertTelegramSetting,
-  people,
-  InsertPerson,
-  eventPeople,
+  friends,
+  InsertFriend,
+  eventFriends,
   departments,
   InsertDepartment,
   eventDepartments,
@@ -342,21 +342,27 @@ export async function upsertTelegramSettings(userId: number, data: Partial<Inser
   }
 }
 
-export async function sendTelegramMessage(userId: number, message: string) {
+export async function sendTelegramMessage(userId: number, message: string, overrideChatId?: string) {
   const settings = await getTelegramSettings(userId);
-  if (!settings || !settings.enabled || !settings.botToken || !settings.chatId) {
+  if (!settings || !settings.enabled || !settings.botToken) {
+    return false;
+  }
+  
+  // Use override chatId if provided (for sending to friends), otherwise use user's chatId
+  const targetChatId = overrideChatId || settings.chatId;
+  if (!targetChatId) {
     return false;
   }
 
   try {
     const payload: Record<string, string | number> = {
-      chat_id: settings.chatId,
+      chat_id: targetChatId,
       text: message,
       parse_mode: "HTML",
     };
     
-    // スレッドID（トピックID）が設定されている場合は追加
-    if (settings.threadId) {
+    // スレッドID（トピックID）が設定されている場合は追加（オーバーライドしていない場合のみ）
+    if (settings.threadId && !overrideChatId) {
       payload.message_thread_id = parseInt(settings.threadId, 10);
     }
     
@@ -372,81 +378,88 @@ export async function sendTelegramMessage(userId: number, message: string) {
   }
 }
 
-// ============ People Functions ============
-export async function getUserPeople(userId: number) {
+// ============ Friends Functions ============
+export async function getUserFriends(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(people).where(eq(people.userId, userId));
+  return db.select().from(friends).where(eq(friends.userId, userId));
 }
 
-export async function createPerson(data: InsertPerson) {
+export async function createFriend(data: InsertFriend) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(people).values(data);
+  const result = await db.insert(friends).values(data);
   return result[0].insertId;
 }
 
-export async function updatePerson(id: number, userId: number, data: Partial<InsertPerson>) {
+export async function updateFriend(id: number, userId: number, data: Partial<InsertFriend>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(people).set(data).where(and(eq(people.id, id), eq(people.userId, userId)));
+  await db.update(friends).set(data).where(and(eq(friends.id, id), eq(friends.userId, userId)));
 }
 
-export async function deletePerson(id: number, userId: number) {
+export async function deleteFriend(id: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  // Delete related event_people first
-  await db.delete(eventPeople).where(eq(eventPeople.personId, id));
-  await db.delete(people).where(and(eq(people.id, id), eq(people.userId, userId)));
+  // Delete related event_friends first
+  await db.delete(eventFriends).where(eq(eventFriends.friendId, id));
+  await db.delete(friends).where(and(eq(friends.id, id), eq(friends.userId, userId)));
 }
 
-export async function getEventPeople(eventId: number) {
+export async function getEventFriends(eventId: number) {
   const db = await getDb();
   if (!db) return [];
   const result = await db
-    .select({ person: people })
-    .from(eventPeople)
-    .innerJoin(people, eq(eventPeople.personId, people.id))
-    .where(eq(eventPeople.eventId, eventId));
-  return result.map((r) => r.person);
+    .select({ friend: friends })
+    .from(eventFriends)
+    .innerJoin(friends, eq(eventFriends.friendId, friends.id))
+    .where(eq(eventFriends.eventId, eventId));
+  return result.map((r) => r.friend);
 }
 
-export async function setEventPeople(eventId: number, personIds: number[]) {
+export async function setEventFriends(eventId: number, friendIds: number[]) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.delete(eventPeople).where(eq(eventPeople.eventId, eventId));
-  if (personIds.length > 0) {
-    await db.insert(eventPeople).values(personIds.map((personId) => ({ eventId, personId })));
+  await db.delete(eventFriends).where(eq(eventFriends.eventId, eventId));
+  if (friendIds.length > 0) {
+    await db.insert(eventFriends).values(friendIds.map((friendId) => ({ eventId, friendId })));
   }
 }
 
-// ============ Department Functions ============
-export async function getUserDepartments(userId: number) {
+export async function getFriendById(id: number) {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(departments).where(eq(departments.userId, userId));
+  if (!db) return undefined;
+  const result = await db.select().from(friends).where(eq(friends.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createDepartment(data: InsertDepartment) {
+// ============ Department Functions (Admin Only for CRUD) ============
+export async function getAllDepartments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(departments);
+}
+
+export async function createDepartment(data: { name: string; color?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(departments).values(data);
   return result[0].insertId;
 }
 
-export async function updateDepartment(id: number, userId: number, data: Partial<InsertDepartment>) {
+export async function updateDepartment(id: number, data: { name?: string; color?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(departments).set(data).where(and(eq(departments.id, id), eq(departments.userId, userId)));
+  await db.update(departments).set(data).where(eq(departments.id, id));
 }
 
-export async function deleteDepartment(id: number, userId: number) {
+export async function deleteDepartment(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   // Delete related event_departments and user_departments first
   await db.delete(eventDepartments).where(eq(eventDepartments.departmentId, id));
   await db.delete(userDepartments).where(eq(userDepartments.departmentId, id));
-  await db.delete(departments).where(and(eq(departments.id, id), eq(departments.userId, userId)));
+  await db.delete(departments).where(eq(departments.id, id));
 }
 
 export async function getEventDepartments(eventId: number) {

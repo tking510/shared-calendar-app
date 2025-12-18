@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE reminders ADD COLUMN customMessage TEXT;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute ALTER TABLE reminders ADD COLUMN customMessage TEXT;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'customMessage'"
+  ]
+}

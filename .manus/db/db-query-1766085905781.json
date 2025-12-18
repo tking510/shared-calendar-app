@@ -1,0 +1,58 @@
+{
+  "query": "SHOW COLUMNS FROM reminders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute SHOW COLUMNS FROM reminders;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "eventId",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "minutesBefore",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "notified",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "notifiedAt",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "customMessage",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint(11)\tNO\tPRI\tNULL\tauto_increment\neventId\tint(11)\tNO\t\tNULL\t\nminutesBefore\tint(11)\tNO\t\tNULL\t\nnotified\ttinyint(1)\tNO\t\t0\t\nnotifiedAt\ttimestamp\tYES\t\tNULL\t\ncustomMessage\ttext\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 1496
+}

@@ -3,7 +3,7 @@
  * This module handles sending Telegram notifications for upcoming events
  */
 
-import { getPendingReminders, markReminderNotified, sendTelegramMessage } from "./db";
+import { getPendingReminders, markReminderNotified, sendTelegramMessage, getEventFriends } from "./db";
 
 const REMINDER_LABELS: Record<number, string> = {
   5: "5分後",
@@ -34,13 +34,33 @@ export async function processReminders(): Promise<{ processed: number; sent: num
       const timeLabel = REMINDER_LABELS[reminder.minutesBefore] || `${reminder.minutesBefore}分後`;
       const eventDate = new Date(event.startTime);
       
-      const message = `🔔 <b>予定のリマインダー</b>\n\n` +
+      // Build the notification message
+      let message = `🔔 <b>予定のリマインダー</b>\n\n` +
         `📅 <b>${event.title}</b>\n` +
         `⏰ ${formatEventDate(eventDate)} ${formatEventTime(eventDate)}\n` +
         (event.location ? `📍 ${event.location}\n` : "") +
         `\n⏳ ${timeLabel}に開始します`;
 
+      // Add custom message if present
+      if (reminder.customMessage) {
+        message += `\n\n📝 ${reminder.customMessage}`;
+      }
+
       const success = await sendTelegramMessage(event.userId, message);
+
+      // Send notifications to friends tagged in the event
+      try {
+        const taggedFriends = await getEventFriends(event.id);
+        for (const friend of taggedFriends) {
+          if (friend.telegramChatId) {
+            // Send notification to friend using the event owner's bot token
+            await sendTelegramMessage(event.userId, message, friend.telegramChatId);
+            console.log(`[Reminder] Sent notification to friend ${friend.name} (${friend.telegramChatId})`);
+          }
+        }
+      } catch (friendError) {
+        console.error(`[Reminder] Error sending to friends:`, friendError);
+      }
       
       if (success) {
         sent++;

@@ -55,7 +55,8 @@ export default function NewEventScreen() {
   const [repeatType, setRepeatType] = useState<"none" | "daily" | "weekly" | "monthly" | "yearly">("none");
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [selectedReminders, setSelectedReminders] = useState<number[]>([15]);
-  const [selectedPeople, setSelectedPeople] = useState<number[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
+  const [customMessage, setCustomMessage] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>([]);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -66,7 +67,7 @@ export default function NewEventScreen() {
   const [showReminderPicker, setShowReminderPicker] = useState(false);
 
   const { data: tags } = trpc.tags.list.useQuery();
-  const { data: people } = trpc.people.list.useQuery();
+  const { data: friends } = trpc.friends.list.useQuery();
   const { data: departments } = trpc.departments.list.useQuery();
 
   const createMutation = trpc.events.create.useMutation({
@@ -94,7 +95,8 @@ export default function NewEventScreen() {
       repeatType,
       tagIds: selectedTags,
       reminderMinutes: selectedReminders,
-      personIds: selectedPeople,
+      friendIds: selectedFriends,
+      customMessage: customMessage.trim() || undefined,
       departmentIds: selectedDepartments,
     });
   };
@@ -119,9 +121,9 @@ export default function NewEventScreen() {
     );
   };
 
-  const togglePerson = (personId: number) => {
-    setSelectedPeople((prev) =>
-      prev.includes(personId) ? prev.filter((id) => id !== personId) : [...prev, personId]
+  const toggleFriend = (friendId: number) => {
+    setSelectedFriends((prev) =>
+      prev.includes(friendId) ? prev.filter((id) => id !== friendId) : [...prev, friendId]
     );
   };
 
@@ -337,42 +339,59 @@ export default function NewEventScreen() {
           </View>
         </View>
 
-        {/* People */}
+        {/* Friends */}
         <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="person.fill" size={20} color={colors.textSecondary} />
-            <ThemedText type="defaultSemiBold">参加者</ThemedText>
+            <ThemedText type="defaultSemiBold">友達</ThemedText>
           </View>
           <View style={styles.tagsContainer}>
-            {people?.map((person) => (
+            {friends?.map((friend: { id: number; name: string; color: string; telegramUsername?: string | null }) => (
               <Pressable
-                key={person.id}
+                key={friend.id}
                 style={[
                   styles.tagChip,
                   {
-                    backgroundColor: selectedPeople.includes(person.id)
-                      ? person.color + "30"
+                    backgroundColor: selectedFriends.includes(friend.id)
+                      ? friend.color + "30"
                       : colors.background,
-                    borderColor: person.color,
+                    borderColor: friend.color,
                   },
                 ]}
-                onPress={() => togglePerson(person.id)}
+                onPress={() => toggleFriend(friend.id)}
               >
-                <View style={[styles.tagDot, { backgroundColor: person.color }]} />
-                <ThemedText style={{ color: selectedPeople.includes(person.id) ? person.color : colors.text }}>
-                  {person.name}
+                <View style={[styles.tagDot, { backgroundColor: friend.color }]} />
+                <ThemedText style={{ color: selectedFriends.includes(friend.id) ? friend.color : colors.text }}>
+                  {friend.name}{friend.telegramUsername ? ` @${friend.telegramUsername}` : ""}
                 </ThemedText>
-                {selectedPeople.includes(person.id) && (
-                  <IconSymbol name="checkmark" size={16} color={person.color} />
+                {selectedFriends.includes(friend.id) && (
+                  <IconSymbol name="checkmark" size={16} color={friend.color} />
                 )}
               </Pressable>
             ))}
-            {(!people || people.length === 0) && (
+            {(!friends || friends.length === 0) && (
               <ThemedText style={{ color: colors.textSecondary }}>
-                参加者がいません。設定から追加できます。
+                友達がいません。設定から追加できます。
               </ThemedText>
             )}
           </View>
+        </View>
+
+        {/* Custom Message */}
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="bell.fill" size={20} color={colors.textSecondary} />
+            <ThemedText type="defaultSemiBold">カスタムメッセージ</ThemedText>
+          </View>
+          <TextInput
+            style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
+            placeholder="通知時に送信するカスタムメッセージ（任意）"
+            placeholderTextColor={colors.textDisabled}
+            value={customMessage}
+            onChangeText={setCustomMessage}
+            multiline
+            numberOfLines={3}
+          />
         </View>
 
         {/* Departments */}

@@ -100,6 +100,7 @@ export const reminders = mysqlTable("reminders", {
   id: int("id").autoincrement().primaryKey(),
   eventId: int("eventId").notNull(),
   minutesBefore: int("minutesBefore").notNull(), // 5, 15, 30, 60, 1440 (1 day)
+  customMessage: text("customMessage"), // Custom notification message
   notified: boolean("notified").default(false).notNull(),
   notifiedAt: timestamp("notifiedAt"),
 });
@@ -125,38 +126,38 @@ export type TelegramSetting = typeof telegramSettings.$inferSelect;
 export type InsertTelegramSetting = typeof telegramSettings.$inferInsert;
 
 /**
- * People (contacts) for tagging in events
+ * Friends (contacts) for tagging in events with Telegram integration
  */
-export const people = mysqlTable("people", {
+export const friends = mysqlTable("friends", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(), // Owner of this contact
+  userId: int("userId").notNull(), // Owner of this friend
   name: varchar("name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 320 }),
+  telegramChatId: varchar("telegramChatId", { length: 100 }), // Telegram Chat ID for notifications
+  telegramUsername: varchar("telegramUsername", { length: 100 }), // Telegram username for display
   color: varchar("color", { length: 7 }).notNull().default("#6366F1"), // Hex color for display
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export type Person = typeof people.$inferSelect;
-export type InsertPerson = typeof people.$inferInsert;
+export type Friend = typeof friends.$inferSelect;
+export type InsertFriend = typeof friends.$inferInsert;
 
 /**
- * Event-Person relationship (many-to-many)
+ * Event-Friend relationship (many-to-many)
  */
-export const eventPeople = mysqlTable("event_people", {
+export const eventFriends = mysqlTable("event_friends", {
   id: int("id").autoincrement().primaryKey(),
   eventId: int("eventId").notNull(),
-  personId: int("personId").notNull(),
+  friendId: int("friendId").notNull(),
 });
 
-export type EventPerson = typeof eventPeople.$inferSelect;
-export type InsertEventPerson = typeof eventPeople.$inferInsert;
+export type EventFriend = typeof eventFriends.$inferSelect;
+export type InsertEventFriend = typeof eventFriends.$inferInsert;
 
 /**
- * Departments for organization
+ * Departments for organization (global, managed by admin only)
  */
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(), // Owner of this department
   name: varchar("name", { length: 100 }).notNull(),
   color: varchar("color", { length: 7 }).notNull().default("#10B981"), // Hex color for display
   createdAt: timestamp("createdAt").defaultNow().notNull(),

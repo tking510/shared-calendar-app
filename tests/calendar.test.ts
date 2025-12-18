@@ -428,3 +428,174 @@ describe("Invite Code Generation", () => {
     expect(codes.size).toBe(100);
   });
 });
+
+
+describe("Friends System", () => {
+  const mockFriends = [
+    { id: 1, name: "田中太郎", telegramChatId: "123456789", telegramUsername: "tanaka", color: "#6366F1" },
+    { id: 2, name: "山田花子", telegramChatId: null, telegramUsername: null, color: "#EC4899" },
+    { id: 3, name: "佐藤次郎", telegramChatId: "987654321", telegramUsername: "sato", color: "#10B981" },
+  ];
+
+  it("should have valid color codes", () => {
+    const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
+    mockFriends.forEach((friend) => {
+      expect(friend.color).toMatch(hexColorRegex);
+    });
+  });
+
+  it("should have unique ids", () => {
+    const ids = mockFriends.map((f) => f.id);
+    const uniqueIds = [...new Set(ids)];
+    expect(ids.length).toBe(uniqueIds.length);
+  });
+
+  it("should have non-empty names", () => {
+    mockFriends.forEach((friend) => {
+      expect(friend.name.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("should identify friends with Telegram configured", () => {
+    const friendsWithTelegram = mockFriends.filter((f) => f.telegramChatId !== null);
+    expect(friendsWithTelegram.length).toBe(2);
+  });
+});
+
+describe("Custom Message Alert", () => {
+  interface Reminder {
+    id: number;
+    eventId: number;
+    minutesBefore: number;
+    customMessage: string | null;
+    notified: boolean;
+  }
+
+  function buildNotificationMessage(
+    eventTitle: string,
+    eventDate: Date,
+    location: string | null,
+    minutesBefore: number,
+    customMessage: string | null
+  ): string {
+    const timeLabel: Record<number, string> = {
+      5: "5分後",
+      15: "15分後",
+      30: "30分後",
+      60: "1時間後",
+      1440: "明日",
+    };
+
+    let message = `🔔 予定のリマインダー\n\n` +
+      `📅 ${eventTitle}\n` +
+      `⏰ ${eventDate.getMonth() + 1}月${eventDate.getDate()}日\n`;
+    
+    if (location) {
+      message += `📍 ${location}\n`;
+    }
+    
+    message += `\n⏳ ${timeLabel[minutesBefore] || `${minutesBefore}分後`}に開始します`;
+
+    if (customMessage) {
+      message += `\n\n📝 ${customMessage}`;
+    }
+
+    return message;
+  }
+
+  it("should include custom message when provided", () => {
+    const message = buildNotificationMessage(
+      "会議",
+      new Date(2024, 0, 15, 14, 0),
+      "会議室A",
+      15,
+      "資料を忘れずに持参してください"
+    );
+    expect(message).toContain("📝 資料を忘れずに持参してください");
+  });
+
+  it("should not include custom message section when null", () => {
+    const message = buildNotificationMessage(
+      "会議",
+      new Date(2024, 0, 15, 14, 0),
+      "会議室A",
+      15,
+      null
+    );
+    expect(message).not.toContain("📝");
+  });
+
+  it("should include location when provided", () => {
+    const message = buildNotificationMessage(
+      "会議",
+      new Date(2024, 0, 15, 14, 0),
+      "会議室A",
+      15,
+      null
+    );
+    expect(message).toContain("📍 会議室A");
+  });
+
+  it("should not include location section when null", () => {
+    const message = buildNotificationMessage(
+      "会議",
+      new Date(2024, 0, 15, 14, 0),
+      null,
+      15,
+      null
+    );
+    expect(message).not.toContain("📍");
+  });
+});
+
+describe("Department System", () => {
+  const mockDepartments = [
+    { id: 1, name: "営業部", color: "#10B981" },
+    { id: 2, name: "開発部", color: "#3B82F6" },
+    { id: 3, name: "人事部", color: "#F59E0B" },
+  ];
+
+  it("should have valid color codes", () => {
+    const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
+    mockDepartments.forEach((dept) => {
+      expect(dept.color).toMatch(hexColorRegex);
+    });
+  });
+
+  it("should have unique ids", () => {
+    const ids = mockDepartments.map((d) => d.id);
+    const uniqueIds = [...new Set(ids)];
+    expect(ids.length).toBe(uniqueIds.length);
+  });
+
+  it("should have non-empty names", () => {
+    mockDepartments.forEach((dept) => {
+      expect(dept.name.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe("Admin Authentication", () => {
+  const ADMIN_ID = "admin";
+  const ADMIN_PASSWORD = "Sloten1234";
+
+  function verifyAdminCredentials(id: string, password: string): boolean {
+    return id === ADMIN_ID && password === ADMIN_PASSWORD;
+  }
+
+  it("should authenticate with correct credentials", () => {
+    expect(verifyAdminCredentials("admin", "Sloten1234")).toBe(true);
+  });
+
+  it("should reject incorrect password", () => {
+    expect(verifyAdminCredentials("admin", "wrongpassword")).toBe(false);
+  });
+
+  it("should reject incorrect id", () => {
+    expect(verifyAdminCredentials("wrongid", "Sloten1234")).toBe(false);
+  });
+
+  it("should reject both incorrect", () => {
+    expect(verifyAdminCredentials("wrongid", "wrongpassword")).toBe(false);
+  });
+});

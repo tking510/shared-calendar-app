@@ -99,9 +99,9 @@ export const appRouter = router({
         if (!event) return null;
         const eventTags = await db.getEventTags(input.id);
         const eventReminders = await db.getEventReminders(input.id);
-        const eventPeople = await db.getEventPeople(input.id);
+        const eventFriends = await db.getEventFriends(input.id);
         const eventDepartments = await db.getEventDepartments(input.id);
-        return { ...event, tags: eventTags, reminders: eventReminders, people: eventPeople, departments: eventDepartments };
+        return { ...event, tags: eventTags, reminders: eventReminders, friends: eventFriends, departments: eventDepartments };
       }),
 
     create: protectedProcedure
@@ -117,8 +117,9 @@ export const appRouter = router({
           calendarId: z.number().optional(),
           tagIds: z.array(z.number()).optional(),
           reminderMinutes: z.array(z.number()).optional(),
-          personIds: z.array(z.number()).optional(),
+          friendIds: z.array(z.number()).optional(),
           departmentIds: z.array(z.number()).optional(),
+          customMessage: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -139,16 +140,20 @@ export const appRouter = router({
           await db.setEventTags(eventId, input.tagIds);
         }
 
-        // Create reminders
+        // Create reminders with custom message
         if (input.reminderMinutes && input.reminderMinutes.length > 0) {
           for (const minutes of input.reminderMinutes) {
-            await db.createReminder({ eventId, minutesBefore: minutes });
+            await db.createReminder({ 
+              eventId, 
+              minutesBefore: minutes,
+              customMessage: input.customMessage ?? null,
+            });
           }
         }
 
-        // Set people
-        if (input.personIds && input.personIds.length > 0) {
-          await db.setEventPeople(eventId, input.personIds);
+        // Set friends
+        if (input.friendIds && input.friendIds.length > 0) {
+          await db.setEventFriends(eventId, input.friendIds);
         }
 
         // Set departments
@@ -172,8 +177,9 @@ export const appRouter = router({
           repeatType: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).optional(),
           tagIds: z.array(z.number()).optional(),
           reminderMinutes: z.array(z.number()).optional(),
-          personIds: z.array(z.number()).optional(),
+          friendIds: z.array(z.number()).optional(),
           departmentIds: z.array(z.number()).optional(),
+          customMessage: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -197,13 +203,17 @@ export const appRouter = router({
         if (input.reminderMinutes !== undefined) {
           await db.deleteEventReminders(input.id);
           for (const minutes of input.reminderMinutes) {
-            await db.createReminder({ eventId: input.id, minutesBefore: minutes });
+            await db.createReminder({ 
+              eventId: input.id, 
+              minutesBefore: minutes,
+              customMessage: input.customMessage ?? null,
+            });
           }
         }
 
-        // Update people if provided
-        if (input.personIds !== undefined) {
-          await db.setEventPeople(input.id, input.personIds);
+        // Update friends if provided
+        if (input.friendIds !== undefined) {
+          await db.setEventFriends(input.id, input.friendIds);
         }
 
         // Update departments if provided
@@ -258,25 +268,27 @@ export const appRouter = router({
       }),
   }),
 
-  // People API
-  people: router({
+  // Friends API
+  friends: router({
     list: protectedProcedure.query(({ ctx }) => {
-      return db.getUserPeople(ctx.user.id);
+      return db.getUserFriends(ctx.user.id);
     }),
 
     create: protectedProcedure
       .input(
         z.object({
           name: z.string().min(1).max(100),
-          email: z.string().email().optional(),
+          telegramChatId: z.string().optional(),
+          telegramUsername: z.string().optional(),
           color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const id = await db.createPerson({
+        const id = await db.createFriend({
           userId: ctx.user.id,
           name: input.name,
-          email: input.email ?? null,
+          telegramChatId: input.telegramChatId ?? null,
+          telegramUsername: input.telegramUsername ?? null,
           color: input.color,
         });
         return { id };
@@ -287,14 +299,16 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           name: z.string().min(1).max(100).optional(),
-          email: z.string().email().optional(),
+          telegramChatId: z.string().optional().nullable(),
+          telegramUsername: z.string().optional().nullable(),
           color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.updatePerson(input.id, ctx.user.id, {
+        await db.updateFriend(input.id, ctx.user.id, {
           name: input.name,
-          email: input.email,
+          telegramChatId: input.telegramChatId,
+          telegramUsername: input.telegramUsername,
           color: input.color,
         });
         return { success: true };
@@ -303,53 +317,67 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        await db.deletePerson(input.id, ctx.user.id);
+        await db.deleteFriend(input.id, ctx.user.id);
         return { success: true };
       }),
   }),
 
-  // Departments API
+  // Departments API (list for all, CRUD for admin only)
   departments: router({
-    list: protectedProcedure.query(({ ctx }) => {
-      return db.getUserDepartments(ctx.user.id);
+    // All users can list departments
+    list: protectedProcedure.query(() => {
+      return db.getAllDepartments();
     }),
 
+    // Admin only: create department
     create: protectedProcedure
       .input(
         z.object({
           name: z.string().min(1).max(100),
           color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+          adminPassword: z.string(), // Admin password required
         })
       )
-      .mutation(async ({ ctx, input }) => {
+      .mutation(async ({ input }) => {
+        if (input.adminPassword !== "Sloten1234") {
+          throw new Error("管理者パスワードが正しくありません");
+        }
         const id = await db.createDepartment({
-          userId: ctx.user.id,
           name: input.name,
           color: input.color,
         });
         return { id };
       }),
 
+    // Admin only: update department
     update: protectedProcedure
       .input(
         z.object({
           id: z.number(),
           name: z.string().min(1).max(100).optional(),
           color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+          adminPassword: z.string(), // Admin password required
         })
       )
-      .mutation(async ({ ctx, input }) => {
-        await db.updateDepartment(input.id, ctx.user.id, {
+      .mutation(async ({ input }) => {
+        if (input.adminPassword !== "Sloten1234") {
+          throw new Error("管理者パスワードが正しくありません");
+        }
+        await db.updateDepartment(input.id, {
           name: input.name,
           color: input.color,
         });
         return { success: true };
       }),
 
+    // Admin only: delete department
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.deleteDepartment(input.id, ctx.user.id);
+      .input(z.object({ id: z.number(), adminPassword: z.string() }))
+      .mutation(async ({ input }) => {
+        if (input.adminPassword !== "Sloten1234") {
+          throw new Error("管理者パスワードが正しくありません");
+        }
+        await db.deleteDepartment(input.id);
         return { success: true };
       }),
 
@@ -358,7 +386,7 @@ export const appRouter = router({
       return db.getUserDepartmentMemberships(ctx.user.id);
     }),
 
-    // Set user's department memberships
+    // Set user's department memberships (any user can set their own)
     setMyDepartments: protectedProcedure
       .input(z.object({ departmentIds: z.array(z.number()) }))
       .mutation(async ({ ctx, input }) => {
