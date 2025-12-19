@@ -62,4 +62,4 @@
 
 - [x] ログイン機能をシンプルな認証に変更（OAuth不要、ID/パスワードのみ）
 - [x] Telegram Webhookエンドポイントの修正（Cannot GET エラー解決）
-- [ ] GitHubにプッシュしてVercel/Railwayを更新
+- [x] GitHubにプッシュしてVercel/Railwayを更新
