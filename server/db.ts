@@ -406,6 +406,49 @@ export async function deleteFriend(id: number, userId: number) {
   await db.delete(friends).where(and(eq(friends.id, id), eq(friends.userId, userId)));
 }
 
+// Find friend by Telegram Chat ID
+export async function findFriendByTelegramChatId(telegramChatId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(friends).where(eq(friends.telegramChatId, telegramChatId));
+  return result[0] ?? null;
+}
+
+// Register friend from Telegram
+export async function registerFriendFromTelegram(data: {
+  userId: number;
+  name: string;
+  telegramChatId: string;
+  telegramUsername: string | null;
+  color: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if already registered
+  const existing = await db.select().from(friends)
+    .where(and(
+      eq(friends.userId, data.userId),
+      eq(friends.telegramChatId, data.telegramChatId)
+    ));
+  
+  if (existing.length > 0) {
+    return { id: existing[0].id, isNew: false };
+  }
+  
+  const result = await db.insert(friends).values({
+    userId: data.userId,
+    name: data.name,
+    telegramChatId: data.telegramChatId,
+    telegramUsername: data.telegramUsername,
+    color: data.color,
+  });
+  
+  return { id: result[0].insertId, isNew: true };
+}
+
+
+
 export async function getEventFriends(eventId: number) {
   const db = await getDb();
   if (!db) return [];

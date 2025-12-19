@@ -7,6 +7,9 @@ import {
   View,
   FlatList,
   RefreshControl,
+  useWindowDimensions,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -81,6 +84,12 @@ export default function CalendarScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  
+  // Responsive breakpoints
+  const isTablet = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1024;
+  const maxContentWidth = isDesktop ? 1200 : isTablet ? 900 : windowWidth;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -232,8 +241,9 @@ export default function CalendarScreen() {
     );
   }
 
-  return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+  // PC layout: side-by-side calendar and events
+  const renderCalendarContent = () => (
+    <View style={[styles.calendarSection, isDesktop && { flex: 2 }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitle}>
@@ -317,60 +327,80 @@ export default function CalendarScreen() {
         ))}
       </View>
 
-      {/* Selected date events */}
-      <View style={[styles.eventsSection, { backgroundColor: colors.backgroundSecondary }]}>
-        <View style={styles.eventsSectionHeader}>
-          <ThemedText type="subtitle">
-            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日の予定
-          </ThemedText>
+    </View>
+  );
+
+  const renderEventsSection = () => (
+    <View style={[styles.eventsSection, { backgroundColor: colors.backgroundSecondary }, isDesktop && { flex: 1, marginTop: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderRadius: 16, marginLeft: 16 }]}>
+      <View style={styles.eventsSectionHeader}>
+        <ThemedText type="subtitle">
+          {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日の予定
+        </ThemedText>
+        <ThemedText style={{ color: colors.textSecondary }}>
+          {selectedDateEvents.length}件
+        </ThemedText>
+      </View>
+
+      {isLoading ? (
+        <ActivityIndicator style={styles.eventsLoading} color={colors.tint} />
+      ) : selectedDateEvents.length === 0 ? (
+        <View style={styles.noEvents}>
           <ThemedText style={{ color: colors.textSecondary }}>
-            {selectedDateEvents.length}件
+            予定はありません
           </ThemedText>
         </View>
+      ) : (
+        <FlatList
+          data={selectedDateEvents}
+          keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              style={[styles.eventCard, { backgroundColor: colors.card }]}
+              onPress={() => router.push(`/event/${item.id}`)}
+            >
+              <View
+                style={[
+                  styles.eventColorBar,
+                  { backgroundColor: colors.tint },
+                ]}
+              />
+              <View style={styles.eventContent}>
+                <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                  {item.title}
+                </ThemedText>
+                <ThemedText style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  {item.startTime.getHours().toString().padStart(2, "0")}:
+                  {item.startTime.getMinutes().toString().padStart(2, "0")} -
+                  {item.endTime.getHours().toString().padStart(2, "0")}:
+                  {item.endTime.getMinutes().toString().padStart(2, "0")}
+                </ThemedText>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        />
+      )}
+    </View>
+  );
 
-        {isLoading ? (
-          <ActivityIndicator style={styles.eventsLoading} color={colors.tint} />
-        ) : selectedDateEvents.length === 0 ? (
-          <View style={styles.noEvents}>
-            <ThemedText style={{ color: colors.textSecondary }}>
-              予定はありません
-            </ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={selectedDateEvents}
-            keyExtractor={(item) => item.id.toString()}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            renderItem={({ item }) => (
-              <Pressable
-                style={[styles.eventCard, { backgroundColor: colors.card }]}
-                onPress={() => router.push(`/event/${item.id}`)}
-              >
-                <View
-                  style={[
-                    styles.eventColorBar,
-                    { backgroundColor: colors.tint },
-                  ]}
-                />
-                <View style={styles.eventContent}>
-                  <ThemedText type="defaultSemiBold" numberOfLines={1}>
-                    {item.title}
-                  </ThemedText>
-                  <ThemedText style={{ color: colors.textSecondary, fontSize: 14 }}>
-                    {item.startTime.getHours().toString().padStart(2, "0")}:
-                    {item.startTime.getMinutes().toString().padStart(2, "0")} -
-                    {item.endTime.getHours().toString().padStart(2, "0")}:
-                    {item.endTime.getMinutes().toString().padStart(2, "0")}
-                  </ThemedText>
-                </View>
-                <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
-              </Pressable>
-            )}
-          />
-        )}
-      </View>
+  return (
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      {isDesktop ? (
+        // Desktop layout: side-by-side
+        <View style={[styles.desktopLayout, { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%' }]}>
+          {renderCalendarContent()}
+          {renderEventsSection()}
+        </View>
+      ) : (
+        // Mobile layout: stacked
+        <>
+          {renderCalendarContent()}
+          {renderEventsSection()}
+        </>
+      )}
 
       {/* FAB */}
       <Pressable
@@ -385,6 +415,14 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  desktopLayout: {
+    flex: 1,
+    flexDirection: 'row',
+    padding: 16,
+  },
+  calendarSection: {
     flex: 1,
   },
   loadingContainer: {

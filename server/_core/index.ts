@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { startReminderJob } from "../reminder-job";
+import { handleTelegramWebhook } from "../telegram-webhook";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -60,6 +61,9 @@ async function startServer() {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
+
+  // Telegram Bot Webhook endpoint
+  app.post("/api/telegram/webhook", handleTelegramWebhook);
 
   app.use(
     "/api/trpc",

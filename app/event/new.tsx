@@ -11,6 +11,7 @@ import {
   View,
   Platform,
   Switch,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -43,6 +44,12 @@ export default function NewEventScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  
+  // Responsive breakpoints
+  const isTablet = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1024;
+  const maxContentWidth = isDesktop ? 800 : isTablet ? 600 : windowWidth;
 
   const initialDate = date ? new Date(date) : new Date();
 
@@ -163,9 +170,9 @@ export default function NewEventScreen() {
         </Pressable>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <ScrollView style={styles.content} contentContainerStyle={[styles.contentContainer, isDesktop && { alignItems: 'center' }]}>
         {/* Title */}
-        <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <TextInput
             style={[styles.titleInput, { color: colors.text }]}
             placeholder="タイトル"
@@ -176,7 +183,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* All Day Toggle */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.switchRow}>
             <ThemedText>終日</ThemedText>
             <Switch
@@ -188,7 +195,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Date & Time */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <Pressable
             style={styles.dateTimeRow}
             onPress={() => setShowStartDatePicker(true)}
@@ -288,7 +295,7 @@ export default function NewEventScreen() {
         )}
 
         {/* Location */}
-        <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.inputRow}>
             <IconSymbol name="location.fill" size={20} color={colors.textSecondary} />
             <TextInput
@@ -302,7 +309,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Tags */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="tag.fill" size={20} color={colors.textSecondary} />
             <ThemedText type="defaultSemiBold">タグ</ThemedText>
@@ -340,7 +347,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Friends */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="person.fill" size={20} color={colors.textSecondary} />
             <ThemedText type="defaultSemiBold">友達</ThemedText>
@@ -378,7 +385,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Custom Message */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="bell.fill" size={20} color={colors.textSecondary} />
             <ThemedText type="defaultSemiBold">カスタムメッセージ</ThemedText>
@@ -395,7 +402,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Departments */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="building.2.fill" size={20} color={colors.textSecondary} />
             <ThemedText type="defaultSemiBold">部署</ThemedText>
@@ -433,7 +440,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Repeat */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <Pressable
             style={styles.dateTimeRow}
             onPress={() => setShowRepeatPicker(!showRepeatPicker)}
@@ -471,7 +478,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Reminders */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="bell.fill" size={20} color={colors.textSecondary} />
             <ThemedText type="defaultSemiBold">リマインダー</ThemedText>
@@ -496,7 +503,7 @@ export default function NewEventScreen() {
         </View>
 
         {/* Description */}
-        <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <TextInput
             style={[styles.textArea, { color: colors.text }]}
             placeholder="メモ"

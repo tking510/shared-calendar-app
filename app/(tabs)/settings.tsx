@@ -12,6 +12,7 @@ import {
   View,
   Modal,
   Switch,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -29,6 +30,12 @@ export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  
+  // Responsive breakpoints
+  const isTablet = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1024;
+  const maxContentWidth = isDesktop ? 800 : isTablet ? 600 : windowWidth;
 
   const [showTagModal, setShowTagModal] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
@@ -433,14 +440,14 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && { alignItems: 'center' }]}>
         {/* Header */}
         <View style={styles.header}>
           <ThemedText type="title">設定</ThemedText>
         </View>
 
         {/* Account Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             アカウント
           </ThemedText>
@@ -460,7 +467,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Tags Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <ThemedText type="subtitle">タグ管理</ThemedText>
             <Pressable
@@ -514,7 +521,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Telegram Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             Telegram通知
           </ThemedText>
@@ -538,7 +545,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Friends Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <ThemedText type="subtitle">友達管理</ThemedText>
             <Pressable
@@ -601,7 +608,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* My Departments Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             所属部署
           </ThemedText>
@@ -627,7 +634,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Departments Admin Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <View style={styles.sectionHeader}>
             <ThemedText type="subtitle">部署管理（Admin）</ThemedText>
             {isAdminMode && (
@@ -708,7 +715,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Logout Button */}
-        <View style={styles.section}>
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <Pressable
             style={[styles.logoutButton, { backgroundColor: colors.error + "15" }]}
             onPress={handleLogout}
