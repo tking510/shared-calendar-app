@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `calendar_members` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `calendarId` int NOT NULL,\n  `userId` int NOT NULL,\n  `role` varchar(50) DEFAULT 'editor',\n  `joinedAt` datetime DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `calendar_user` (`calendarId`, `userId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute CREATE TABLE IF NOT EXISTS `calendar_members` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `calendarId` int NOT NULL,\n  `userId` int NOT NULL,\n  `role` varchar(50) DEFAULT 'editor',\n  `joinedAt` datetime DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `calendar_user` (`calendarId`, `userId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1637
+}

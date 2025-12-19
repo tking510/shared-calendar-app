@@ -1,0 +1,125 @@
+-- Users table
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  openId VARCHAR(64) NOT NULL UNIQUE,
+  name TEXT,
+  email VARCHAR(320),
+  loginMethod VARCHAR(255),
+  role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  lastSignedIn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tags table
+CREATE TABLE tags (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  color VARCHAR(7) NOT NULL,
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Shared calendars table
+CREATE TABLE shared_calendars (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ownerId INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  inviteCode VARCHAR(32) NOT NULL UNIQUE,
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Calendar members table
+CREATE TABLE calendar_members (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  calendarId INT NOT NULL,
+  userId INT NOT NULL,
+  role ENUM('owner', 'editor', 'viewer') NOT NULL DEFAULT 'viewer',
+  joinedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Events table
+CREATE TABLE events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId INT NOT NULL,
+  calendarId INT,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  location VARCHAR(255),
+  startTime TIMESTAMP NOT NULL,
+  endTime TIMESTAMP NOT NULL,
+  allDay BOOLEAN NOT NULL DEFAULT FALSE,
+  repeatType ENUM('none', 'daily', 'weekly', 'monthly', 'yearly') NOT NULL DEFAULT 'none',
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Event tags junction table
+CREATE TABLE event_tags (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  eventId INT NOT NULL,
+  tagId INT NOT NULL
+);
+
+-- Reminders table
+CREATE TABLE reminders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  eventId INT NOT NULL,
+  minutesBefore INT NOT NULL,
+  customMessage TEXT,
+  notified BOOLEAN NOT NULL DEFAULT FALSE,
+  notifiedAt TIMESTAMP NULL
+);
+
+-- Telegram settings table
+CREATE TABLE telegram_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId INT NOT NULL UNIQUE,
+  botToken VARCHAR(100),
+  chatId VARCHAR(100),
+  threadId VARCHAR(100),
+  enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Friends table
+CREATE TABLE friends (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  telegramChatId VARCHAR(100),
+  telegramUsername VARCHAR(100),
+  color VARCHAR(7) NOT NULL DEFAULT '#6366F1',
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Event friends junction table
+CREATE TABLE event_friends (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  eventId INT NOT NULL,
+  friendId INT NOT NULL
+);
+
+-- Departments table
+CREATE TABLE departments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  color VARCHAR(7) NOT NULL DEFAULT '#10B981',
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Event departments junction table
+CREATE TABLE event_departments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  eventId INT NOT NULL,
+  departmentId INT NOT NULL
+);
+
+-- User departments junction table
+CREATE TABLE user_departments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId INT NOT NULL,
+  departmentId INT NOT NULL,
+  joinedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

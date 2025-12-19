@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `reminders` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `eventId` int NOT NULL,\n  `minutesBefore` int NOT NULL DEFAULT '30',\n  `customMessage` text,\n  `notified` tinyint(1) DEFAULT '0',\n  `notifiedAt` datetime DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `eventId` (`eventId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute CREATE TABLE IF NOT EXISTS `reminders` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `eventId` int NOT NULL,\n  `minutesBefore` int NOT NULL DEFAULT '30',\n  `customMessage` text,\n  `notified` tinyint(1) DEFAULT '0',\n  `notifiedAt` datetime DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `eventId` (`eventId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1546
+}

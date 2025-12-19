@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `users` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `openId` varchar(255) NOT NULL,\n  `name` varchar(255) DEFAULT NULL,\n  `email` varchar(255) DEFAULT NULL,\n  `loginMethod` varchar(255) DEFAULT NULL,\n  `role` varchar(50) DEFAULT 'user',\n  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `lastSignedIn` datetime DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `openId` (`openId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute CREATE TABLE IF NOT EXISTS `users` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `openId` varchar(255) NOT NULL,\n  `name` varchar(255) DEFAULT NULL,\n  `email` varchar(255) DEFAULT NULL,\n  `loginMethod` varchar(255) DEFAULT NULL,\n  `role` varchar(50) DEFAULT 'user',\n  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `lastSignedIn` datetime DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `openId` (`openId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1589
+}

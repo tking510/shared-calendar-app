@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `events` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `userId` int NOT NULL,\n  `calendarId` int DEFAULT NULL,\n  `title` varchar(255) NOT NULL,\n  `description` text,\n  `location` varchar(255) DEFAULT NULL,\n  `startTime` datetime NOT NULL,\n  `endTime` datetime NOT NULL,\n  `allDay` tinyint(1) DEFAULT '0',\n  `repeatType` varchar(50) DEFAULT NULL,\n  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `userId` (`userId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute CREATE TABLE IF NOT EXISTS `events` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `userId` int NOT NULL,\n  `calendarId` int DEFAULT NULL,\n  `title` varchar(255) NOT NULL,\n  `description` text,\n  `location` varchar(255) DEFAULT NULL,\n  `startTime` datetime NOT NULL,\n  `endTime` datetime NOT NULL,\n  `allDay` tinyint(1) DEFAULT '0',\n  `repeatType` varchar(50) DEFAULT NULL,\n  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `userId` (`userId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1617
+}
