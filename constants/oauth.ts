@@ -45,8 +45,8 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // Fallback to empty (will use relative URL)
-  return "";
+  // Fallback to Railway API URL for production
+  return "https://shared-calendar-app-production.up.railway.app";
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
