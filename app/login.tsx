@@ -1,72 +1,125 @@
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { getLoginUrl } from "@/constants/oauth";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { getApiBaseUrl } from "@/constants/oauth";
+import * as Auth from "@/lib/auth";
 
 export default function LoginScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    try {
-      setIsLoggingIn(true);
-      const loginUrl = getLoginUrl();
+    if (!username || !password) {
+      setError("ユーザー名とパスワードを入力してください");
+      return;
+    }
 
-      if (Platform.OS === "web") {
-        window.location.href = loginUrl;
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/simple-auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "ログインに失敗しました");
         return;
       }
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        loginUrl,
-        undefined,
-        {
-          preferEphemeralSession: false,
-          showInRecents: true,
-        }
-      );
+      // Save session token
+      await Auth.setSessionToken(data.sessionToken);
+      await Auth.setUserInfo({
+        id: data.user.id,
+        openId: data.user.openId,
+        name: data.user.name,
+        email: data.user.email,
+        loginMethod: data.user.loginMethod,
+        lastSignedIn: new Date(data.user.lastSignedIn),
+      });
 
-      if (result.type === "success" && result.url) {
-        let url: URL;
-        if (result.url.startsWith("exp://") || result.url.startsWith("exps://")) {
-          const urlStr = result.url.replace(/^exp(s)?:\/\//, "http://");
-          url = new URL(urlStr);
-        } else {
-          url = new URL(result.url);
-        }
-
-        const code = url.searchParams.get("code");
-        const state = url.searchParams.get("state");
-        const error = url.searchParams.get("error");
-
-        if (error) {
-          console.error("[Auth] OAuth error:", error);
-          return;
-        }
-
-        if (code && state) {
-          router.push({
-            pathname: "/oauth/callback" as any,
-            params: { code, state },
-          });
-        }
-      }
-    } catch (error) {
-      console.error("[Auth] Login error:", error);
+      // Navigate to home
+      router.replace("/");
+    } catch (err) {
+      console.error("[Login] Error:", err);
+      setError("ネットワークエラーが発生しました");
     } finally {
-      setIsLoggingIn(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!username || !password) {
+      setError("ユーザー名とパスワードを入力してください");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/simple-auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, name: name || username }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "登録に失敗しました");
+        return;
+      }
+
+      // Save session token
+      await Auth.setSessionToken(data.sessionToken);
+      await Auth.setUserInfo({
+        id: data.user.id,
+        openId: data.user.openId,
+        name: data.user.name,
+        email: data.user.email,
+        loginMethod: data.user.loginMethod,
+        lastSignedIn: new Date(data.user.lastSignedIn),
+      });
+
+      // Navigate to home
+      router.replace("/");
+    } catch (err) {
+      console.error("[Register] Error:", err);
+      setError("ネットワークエラーが発生しました");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,49 +133,136 @@ export default function LoginScreen() {
         },
       ]}
     >
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <IconSymbol name="calendar" size={80} color={colors.tint} />
-        </View>
-
-        <ThemedText type="title" style={styles.title}>
-          共有カレンダー
-        </ThemedText>
-
-        <ThemedText style={[styles.description, { color: colors.textSecondary }]}>
-          予定を管理し、チームと共有しましょう。{"\n"}
-          Telegram通知でリマインダーを受け取れます。
-        </ThemedText>
-
-        <View style={styles.features}>
-          <View style={styles.featureItem}>
-            <IconSymbol name="tag.fill" size={24} color={colors.tint} />
-            <ThemedText style={styles.featureText}>タグで予定を整理</ThemedText>
-          </View>
-          <View style={styles.featureItem}>
-            <IconSymbol name="bell.fill" size={24} color={colors.tint} />
-            <ThemedText style={styles.featureText}>Telegram通知</ThemedText>
-          </View>
-          <View style={styles.featureItem}>
-            <IconSymbol name="person.2.fill" size={24} color={colors.tint} />
-            <ThemedText style={styles.featureText}>カレンダー共有</ThemedText>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <Pressable
-          style={[styles.loginButton, { backgroundColor: colors.tint }]}
-          onPress={handleLogin}
-          disabled={isLoggingIn}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          {isLoggingIn ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <ThemedText style={styles.loginButtonText}>ログイン</ThemedText>
-          )}
-        </Pressable>
-      </View>
+          <View style={styles.content}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.tint + "20" }]}>
+              <IconSymbol name="calendar" size={80} color={colors.tint} />
+            </View>
+
+            <ThemedText type="title" style={styles.title}>
+              共有カレンダー
+            </ThemedText>
+
+            <ThemedText style={[styles.description, { color: colors.textSecondary }]}>
+              {isRegisterMode
+                ? "アカウントを作成して予定を管理しましょう"
+                : "ログインして予定を管理しましょう"}
+            </ThemedText>
+
+            {error ? (
+              <View style={[styles.errorContainer, { backgroundColor: colors.error + "20" }]}>
+                <ThemedText style={[styles.errorText, { color: colors.error }]}>
+                  {error}
+                </ThemedText>
+              </View>
+            ) : null}
+
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <ThemedText style={styles.label}>ユーザー名</ThemedText>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.backgroundSecondary,
+                      color: colors.text,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="ユーザー名を入力"
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              {isRegisterMode && (
+                <View style={styles.inputContainer}>
+                  <ThemedText style={styles.label}>表示名（任意）</ThemedText>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.backgroundSecondary,
+                        color: colors.text,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="表示名を入力"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+              )}
+
+              <View style={styles.inputContainer}>
+                <ThemedText style={styles.label}>パスワード</ThemedText>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.backgroundSecondary,
+                      color: colors.text,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="パスワードを入力"
+                  placeholderTextColor={colors.textSecondary}
+                  secureTextEntry
+                />
+              </View>
+
+              <Pressable
+                style={[styles.submitButton, { backgroundColor: colors.tint }]}
+                onPress={isRegisterMode ? handleRegister : handleLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <ThemedText style={styles.submitButtonText}>
+                    {isRegisterMode ? "アカウント作成" : "ログイン"}
+                  </ThemedText>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={styles.switchButton}
+                onPress={() => {
+                  setIsRegisterMode(!isRegisterMode);
+                  setError("");
+                }}
+              >
+                <ThemedText style={[styles.switchButtonText, { color: colors.tint }]}>
+                  {isRegisterMode
+                    ? "既にアカウントをお持ちの方はこちら"
+                    : "新規アカウント作成"}
+                </ThemedText>
+              </Pressable>
+            </View>
+
+            {!isRegisterMode && (
+              <View style={styles.adminHint}>
+                <ThemedText style={[styles.hintText, { color: colors.textSecondary }]}>
+                  管理者: admin / Sloten1234
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -131,54 +271,91 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,
+    paddingVertical: 24,
   },
   iconContainer: {
     width: 120,
     height: 120,
     borderRadius: 24,
-    backgroundColor: "rgba(0, 122, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
   },
   title: {
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: "center",
   },
   description: {
     textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 32,
+    marginBottom: 24,
   },
-  features: {
+  errorContainer: {
+    width: "100%",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    textAlign: "center",
+    fontSize: 14,
+  },
+  form: {
+    width: "100%",
+    maxWidth: 400,
     gap: 16,
   },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+  inputContainer: {
+    gap: 6,
   },
-  featureText: {
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  input: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 16,
     fontSize: 16,
   },
-  footer: {
-    paddingHorizontal: 32,
-    paddingBottom: 16,
-  },
-  loginButton: {
+  submitButton: {
     height: 50,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 8,
   },
-  loginButtonText: {
+  submitButtonText: {
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
+  },
+  switchButton: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  switchButtonText: {
+    fontSize: 15,
+  },
+  adminHint: {
+    marginTop: 32,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+  },
+  hintText: {
+    fontSize: 13,
+    textAlign: "center",
   },
 });

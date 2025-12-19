@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -8,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { startReminderJob } from "../reminder-job";
 import { handleTelegramWebhook } from "../telegram-webhook";
+import { handleRegister, handleLogin, handleGetMe, handleLogout } from "../simple-auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -55,15 +57,26 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(cookieParser());
 
+  // Simple auth routes (ID/Password based)
+  app.post("/api/simple-auth/register", handleRegister);
+  app.post("/api/simple-auth/login", handleLogin);
+  app.get("/api/simple-auth/me", handleGetMe);
+  app.post("/api/simple-auth/logout", handleLogout);
+
+  // OAuth routes (keep for backward compatibility)
   registerOAuthRoutes(app);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
-  // Telegram Bot Webhook endpoint
+  // Telegram Bot Webhook endpoint (POST for actual webhook, GET for verification)
   app.post("/api/telegram/webhook", handleTelegramWebhook);
+  app.get("/api/telegram/webhook", (_req, res) => {
+    res.json({ ok: true, message: "Telegram webhook endpoint is ready. Use POST method for webhook updates." });
+  });
 
   app.use(
     "/api/trpc",
