@@ -3,18 +3,56 @@ import { getDb } from "./db";
 import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { SignJWT, jwtVerify } from "jose";
 
-// Simple in-memory session store (for production, use Redis or database)
-const sessions = new Map<string, { userId: number; openId: string; expiresAt: Date }>();
+// Get session secret from environment or use default
+const SESSION_SECRET = process.env.COOKIE_SECRET || "manus-calendar-app-secret-key-2024";
+const SECRET_KEY = new TextEncoder().encode(SESSION_SECRET);
 
 // Hash password with SHA256
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
-// Generate session token
-function generateSessionToken(): string {
-  return crypto.randomBytes(32).toString("hex");
+// Generate JWT session token
+async function generateSessionToken(userId: number, openId: string, name: string): Promise<string> {
+  const issuedAt = Date.now();
+  const expiresInMs = 365 * 24 * 60 * 60 * 1000; // 1 year
+  const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
+
+  return new SignJWT({
+    openId,
+    appId: process.env.MANUS_APP_ID || "calendar-app",
+    name,
+    userId,
+  })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setExpirationTime(expirationSeconds)
+    .sign(SECRET_KEY);
+}
+
+// Verify JWT session token
+async function verifySessionToken(token: string): Promise<{ userId: number; openId: string; name: string } | null> {
+  try {
+    const { payload } = await jwtVerify(token, SECRET_KEY, {
+      algorithms: ["HS256"],
+    });
+    
+    const { openId, name, userId } = payload as Record<string, unknown>;
+    
+    if (typeof openId !== "string" || typeof name !== "string") {
+      return null;
+    }
+    
+    return {
+      userId: typeof userId === "number" ? userId : 0,
+      openId,
+      name,
+    };
+  } catch (error) {
+    console.error("[SimpleAuth] Token verification failed:", error);
+    return null;
+  }
 }
 
 // Admin credentials
@@ -64,9 +102,10 @@ export async function handleRegister(req: Request, res: Response) {
 
     // Create user
     const passwordHash = hashPassword(password);
+    const displayName = name || username;
     const result = await db.insert(users).values({
       openId,
-      name: name || username,
+      name: displayName,
       email: null,
       loginMethod: `local:${passwordHash}`,
       role: "user",
@@ -75,13 +114,8 @@ export async function handleRegister(req: Request, res: Response) {
 
     const userId = result[0].insertId;
 
-    // Create session
-    const sessionToken = generateSessionToken();
-    sessions.set(sessionToken, {
-      userId,
-      openId,
-      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-    });
+    // Create JWT session token
+    const sessionToken = await generateSessionToken(userId, openId, displayName);
 
     res.json({
       success: true,
@@ -89,7 +123,7 @@ export async function handleRegister(req: Request, res: Response) {
       user: {
         id: userId,
         openId,
-        name: name || username,
+        name: displayName,
         email: null,
         loginMethod: "local",
         lastSignedIn: new Date().toISOString(),
@@ -156,12 +190,7 @@ export async function handleLogin(req: Request, res: Response) {
           };
         }
 
-        const sessionToken = generateSessionToken();
-        sessions.set(sessionToken, {
-          userId: adminUser.id,
-          openId: "local_admin",
-          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        });
+        const sessionToken = await generateSessionToken(adminUser.id, "local_admin", "Admin");
 
         res.json({
           success: true,
@@ -209,13 +238,8 @@ export async function handleLogin(req: Request, res: Response) {
     // Update last signed in
     await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, user.id));
 
-    // Create session
-    const sessionToken = generateSessionToken();
-    sessions.set(sessionToken, {
-      userId: user.id,
-      openId: user.openId,
-      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    });
+    // Create JWT session token
+    const sessionToken = await generateSessionToken(user.id, user.openId, user.name || username);
 
     res.json({
       success: true,
@@ -247,9 +271,8 @@ export async function handleGetMe(req: Request, res: Response) {
       return;
     }
 
-    const session = sessions.get(sessionToken);
-    if (!session || session.expiresAt < new Date()) {
-      sessions.delete(sessionToken);
+    const session = await verifySessionToken(sessionToken);
+    if (!session) {
       res.status(401).json({ error: "セッションが無効です", user: null });
       return;
     }
@@ -275,10 +298,9 @@ export async function handleGetMe(req: Request, res: Response) {
       return;
     }
 
-    const userResult = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
+    const userResult = await db.select().from(users).where(eq(users.openId, session.openId)).limit(1);
     
     if (userResult.length === 0) {
-      sessions.delete(sessionToken);
       res.status(401).json({ error: "ユーザーが見つかりません", user: null });
       return;
     }
@@ -303,21 +325,15 @@ export async function handleGetMe(req: Request, res: Response) {
 
 // Logout
 export async function handleLogout(req: Request, res: Response) {
-  const authHeader = req.headers.authorization;
-  const sessionToken = authHeader?.replace("Bearer ", "") || req.cookies?.session;
-  
-  if (sessionToken) {
-    sessions.delete(sessionToken);
-  }
-  
+  // JWT tokens are stateless, so we just return success
+  // The client should remove the token from localStorage
   res.json({ success: true });
 }
 
 // Validate session and return user ID (for internal use)
 export async function validateSession(sessionToken: string): Promise<{ userId: number; openId: string } | null> {
-  const session = sessions.get(sessionToken);
-  if (!session || session.expiresAt < new Date()) {
-    if (session) sessions.delete(sessionToken);
+  const session = await verifySessionToken(sessionToken);
+  if (!session) {
     return null;
   }
   return { userId: session.userId, openId: session.openId };

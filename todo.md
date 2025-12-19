@@ -64,3 +64,8 @@
 - [x] Telegram Webhookエンドポイントの修正（Cannot GET エラー解決）
 - [x] GitHubにプッシュしてVercel/Railwayを更新
 - [x] Web版でlocalStorageからセッショントークンを取得するように修正
+
+## バグ修正（v7.2）
+
+- [ ] ログインができない問題を修正
+- [ ] 登録ができない問題を修正
