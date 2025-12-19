@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { SignJWT, jwtVerify } from "jose";
 
-// Get session secret from environment or use default
-const SESSION_SECRET = process.env.COOKIE_SECRET || "manus-calendar-app-secret-key-2024";
+// Get session secret from environment or use default (same as SDK)
+const SESSION_SECRET = process.env.JWT_SECRET || process.env.COOKIE_SECRET || "manus-calendar-app-secret-key-2024";
 const SECRET_KEY = new TextEncoder().encode(SESSION_SECRET);
 
 // Hash password with SHA256
