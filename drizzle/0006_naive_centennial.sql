@@ -1,0 +1,1 @@
+ALTER TABLE `users` MODIFY COLUMN `loginMethod` varchar(255);

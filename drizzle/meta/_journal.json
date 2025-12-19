@@ -43,6 +43,13 @@
       "when": 1766085419732,
       "tag": "0005_clever_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1766187771719,
+      "tag": "0006_naive_centennial",
+      "breakpoints": true
     }
   ]
 }
