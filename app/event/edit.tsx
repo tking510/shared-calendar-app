@@ -23,6 +23,8 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
 
+// Get tRPC utils for cache invalidation
+
 const REMINDER_OPTIONS = [
   { value: 5, label: "5分前" },
   { value: 15, label: "15分前" },
@@ -99,8 +101,13 @@ export default function EditEventScreen() {
     }
   }, [event, isLoaded]);
 
+  const utils = trpc.useUtils();
+
   const updateMutation = trpc.events.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate events cache to refresh calendar view
+      await utils.events.list.invalidate();
+      await utils.events.get.invalidate({ id: eventId });
       router.back();
     },
     onError: (error) => {
