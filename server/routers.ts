@@ -238,6 +238,22 @@ export const appRouter = router({
       return db.getUserSharedCalendars(ctx.user.id);
     }),
 
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const calendars = await db.getUserSharedCalendars(ctx.user.id);
+        const calendarData = calendars.find(c => c.calendar.id === input.id);
+        if (!calendarData) return null;
+        const members = await db.getCalendarMembers(input.id);
+        return { ...calendarData, members };
+      }),
+
+    getEvents: protectedProcedure
+      .input(z.object({ calendarId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSharedCalendarEvents(input.calendarId);
+      }),
+
     create: protectedProcedure
       .input(z.object({ name: z.string().min(1).max(255) }))
       .mutation(async ({ ctx, input }) => {
