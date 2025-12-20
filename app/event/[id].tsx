@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -125,9 +126,9 @@ export default function EventDetailScreen() {
           >
             <IconSymbol name="pencil" size={22} color={colors.tint} />
           </Pressable>
-          <Pressable onPress={handleDelete} style={styles.headerButton}>
+          <TouchableOpacity onPress={handleDelete} style={styles.headerButton} activeOpacity={0.7}>
             <IconSymbol name="trash.fill" size={22} color={colors.error} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
 
