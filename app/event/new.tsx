@@ -1,4 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { WebDateTimePicker } from "@/components/web-datetime-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import {
@@ -232,7 +233,59 @@ export default function NewEventScreen() {
         </View>
 
         {/* Date/Time Pickers */}
-        {showStartDatePicker && (
+        {/* Date/Time Pickers - Web */}
+        {Platform.OS === "web" && showStartDatePicker && (
+          <WebDateTimePicker
+            value={startDate}
+            mode="date"
+            onChange={(date) => {
+              const newDate = new Date(startDate);
+              newDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+              setStartDate(newDate);
+              if (newDate > endDate) {
+                setEndDate(new Date(newDate.getTime() + 60 * 60 * 1000));
+              }
+            }}
+            onClose={() => setShowStartDatePicker(false)}
+          />
+        )}
+        {Platform.OS === "web" && showStartTimePicker && (
+          <WebDateTimePicker
+            value={startDate}
+            mode="time"
+            onChange={(date) => {
+              setStartDate(date);
+              if (date > endDate) {
+                setEndDate(new Date(date.getTime() + 60 * 60 * 1000));
+              }
+            }}
+            onClose={() => setShowStartTimePicker(false)}
+          />
+        )}
+        {Platform.OS === "web" && showEndDatePicker && (
+          <WebDateTimePicker
+            value={endDate}
+            mode="date"
+            minimumDate={startDate}
+            onChange={(date) => {
+              const newDate = new Date(endDate);
+              newDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+              setEndDate(newDate);
+            }}
+            onClose={() => setShowEndDatePicker(false)}
+          />
+        )}
+        {Platform.OS === "web" && showEndTimePicker && (
+          <WebDateTimePicker
+            value={endDate}
+            mode="time"
+            onChange={(date) => setEndDate(date)}
+            onClose={() => setShowEndTimePicker(false)}
+          />
+        )}
+
+        {/* Date/Time Pickers - Native */}
+        {Platform.OS !== "web" && showStartDatePicker && (
           <DateTimePicker
             value={startDate}
             mode="date"
@@ -250,7 +303,7 @@ export default function NewEventScreen() {
             }}
           />
         )}
-        {showStartTimePicker && (
+        {Platform.OS !== "web" && showStartTimePicker && (
           <DateTimePicker
             value={startDate}
             mode="time"
@@ -266,7 +319,7 @@ export default function NewEventScreen() {
             }}
           />
         )}
-        {showEndDatePicker && (
+        {Platform.OS !== "web" && showEndDatePicker && (
           <DateTimePicker
             value={endDate}
             mode="date"
@@ -282,7 +335,7 @@ export default function NewEventScreen() {
             }}
           />
         )}
-        {showEndTimePicker && (
+        {Platform.OS !== "web" && showEndTimePicker && (
           <DateTimePicker
             value={endDate}
             mode="time"
