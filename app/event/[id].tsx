@@ -1,5 +1,4 @@
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +12,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { Colors } from "@/constants/theme";
@@ -45,7 +43,7 @@ export default function EventDetailScreen() {
 
   const eventId = parseInt(id || "0", 10);
 
-  const { data: event, isLoading, refetch } = trpc.events.get.useQuery(
+  const { data: event, isLoading } = trpc.events.get.useQuery(
     { id: eventId },
     { enabled: eventId > 0 }
   );
@@ -89,32 +87,30 @@ export default function EventDetailScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <View style={{ ...styles.loadingContainer, backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.tint} />
-      </ThemedView>
+      </View>
     );
   }
 
   if (!event) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <View style={{ ...styles.loadingContainer, backgroundColor: colors.background }}>
         <ThemedText>予定が見つかりません</ThemedText>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={{ ...styles.container, backgroundColor: colors.background }}>
       {/* Header */}
       <View
-        style={[
-          styles.header,
-          {
-            paddingTop: Math.max(insets.top, 20),
-            backgroundColor: colors.background,
-            borderBottomColor: colors.border,
-          },
-        ]}
+        style={{
+          ...styles.header,
+          paddingTop: Math.max(insets.top, 20),
+          backgroundColor: colors.background,
+          borderBottomColor: colors.border,
+        }}
       >
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="chevron.left" size={24} color={colors.tint} />
@@ -147,10 +143,10 @@ export default function EventDetailScreen() {
               {event.tags.map((tag) => (
                 <View
                   key={tag.id}
-                  style={[styles.tag, { backgroundColor: tag.color + "20" }]}
+                  style={{ ...styles.tag, backgroundColor: tag.color + "20" }}
                 >
-                  <View style={[styles.tagDot, { backgroundColor: tag.color }]} />
-                  <ThemedText style={[styles.tagText, { color: tag.color }]}>
+                  <View style={{ ...styles.tagDot, backgroundColor: tag.color }} />
+                  <ThemedText style={{ ...styles.tagText, color: tag.color }}>
                     {tag.name}
                   </ThemedText>
                 </View>
@@ -160,7 +156,7 @@ export default function EventDetailScreen() {
         </View>
 
         {/* Date & Time */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={{ ...styles.section, backgroundColor: colors.backgroundSecondary }}>
           <View style={styles.sectionRow}>
             <IconSymbol name="clock.fill" size={20} color={colors.textSecondary} />
             <View style={styles.sectionContent}>
@@ -181,7 +177,7 @@ export default function EventDetailScreen() {
 
         {/* Location */}
         {event.location && (
-          <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={{ ...styles.section, backgroundColor: colors.backgroundSecondary }}>
             <View style={styles.sectionRow}>
               <IconSymbol name="location.fill" size={20} color={colors.textSecondary} />
               <View style={styles.sectionContent}>
@@ -193,7 +189,7 @@ export default function EventDetailScreen() {
 
         {/* Repeat */}
         {event.repeatType !== "none" && (
-          <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={{ ...styles.section, backgroundColor: colors.backgroundSecondary }}>
             <View style={styles.sectionRow}>
               <IconSymbol name="repeat" size={20} color={colors.textSecondary} />
               <View style={styles.sectionContent}>
@@ -205,7 +201,7 @@ export default function EventDetailScreen() {
 
         {/* Reminders */}
         {event.reminders && event.reminders.length > 0 && (
-          <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={{ ...styles.section, backgroundColor: colors.backgroundSecondary }}>
             <View style={styles.sectionRow}>
               <IconSymbol name="bell.fill" size={20} color={colors.textSecondary} />
               <View style={styles.sectionContent}>
@@ -222,7 +218,7 @@ export default function EventDetailScreen() {
 
         {/* Description */}
         {event.description && (
-          <View style={[styles.section, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={{ ...styles.section, backgroundColor: colors.backgroundSecondary }}>
             <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
               メモ
             </ThemedText>
@@ -234,15 +230,15 @@ export default function EventDetailScreen() {
 
         {/* Delete Button */}
         <Link href={`/event/delete/${eventId}` as any} asChild>
-          <View style={[styles.deleteButton, { borderColor: colors.error }]}>
+          <Pressable style={{ ...styles.deleteButton, borderColor: colors.error }}>
             <IconSymbol name="trash.fill" size={20} color={colors.error} />
             <ThemedText style={{ color: colors.error, fontWeight: "600" }}>
               この予定を削除
             </ThemedText>
-          </View>
+          </Pressable>
         </Link>
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 }
 

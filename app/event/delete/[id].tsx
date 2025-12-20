@@ -1,9 +1,8 @@
 import { useLocalSearchParams, useRouter, Link } from "expo-router";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -37,32 +36,31 @@ export default function DeleteEventScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={{ ...styles.container, backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.tint} />
-      </ThemedView>
+      </View>
     );
   }
 
   if (!event) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={{ ...styles.container, backgroundColor: colors.background }}>
         <ThemedText>予定が見つかりません</ThemedText>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView
-      style={[
-        styles.container,
-        {
-          paddingTop: Math.max(insets.top, 40),
-          paddingBottom: Math.max(insets.bottom, 20),
-        },
-      ]}
+    <View
+      style={{
+        ...styles.container,
+        backgroundColor: colors.background,
+        paddingTop: Math.max(insets.top, 40),
+        paddingBottom: Math.max(insets.bottom, 20),
+      }}
     >
       <View style={styles.content}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.error + "20" }]}>
+        <View style={{ ...styles.iconContainer, backgroundColor: colors.error + "20" }}>
           <IconSymbol name="trash.fill" size={48} color={colors.error} />
         </View>
 
@@ -70,35 +68,34 @@ export default function DeleteEventScreen() {
           予定を削除
         </ThemedText>
 
-        <ThemedText style={[styles.message, { color: colors.textSecondary }]}>
+        <ThemedText style={{ ...styles.message, color: colors.textSecondary }}>
           「{event.title}」を削除してもよろしいですか？
         </ThemedText>
 
-        <ThemedText style={[styles.warning, { color: colors.textSecondary }]}>
+        <ThemedText style={{ ...styles.warning, color: colors.textSecondary }}>
           この操作は取り消せません。
         </ThemedText>
       </View>
 
       <View style={styles.buttons}>
         <Link href={`/event/${eventId}` as any} asChild>
-          <View style={[styles.button, styles.cancelButton, { borderColor: colors.border }]}>
+          <Pressable style={{ ...styles.button, ...styles.cancelButton, borderColor: colors.border }}>
             <ThemedText style={{ fontWeight: "600" }}>キャンセル</ThemedText>
-          </View>
+          </Pressable>
         </Link>
 
-        <View
-          style={[styles.button, styles.deleteButton, { backgroundColor: colors.error }]}
-          // @ts-ignore - Web only
-          onClick={handleDelete}
+        <Pressable
+          onPress={handleDelete}
+          style={{ ...styles.button, ...styles.deleteButton, backgroundColor: colors.error }}
         >
           {deleteMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <ThemedText style={{ color: "#fff", fontWeight: "600" }}>削除する</ThemedText>
           )}
-        </View>
+        </Pressable>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
