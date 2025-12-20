@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -54,18 +55,24 @@ export default function EventDetailScreen() {
   });
 
   const handleDelete = () => {
-    Alert.alert(
-      "予定を削除",
-      "この予定を削除してもよろしいですか？",
-      [
-        { text: "キャンセル", style: "cancel" },
-        {
-          text: "削除",
-          style: "destructive",
-          onPress: () => deleteMutation.mutate({ id: eventId }),
-        },
-      ]
-    );
+    if (Platform.OS === "web") {
+      if (window.confirm("この予定を削除してもよろしいですか？")) {
+        deleteMutation.mutate({ id: eventId });
+      }
+    } else {
+      Alert.alert(
+        "予定を削除",
+        "この予定を削除してもよろしいですか？",
+        [
+          { text: "キャンセル", style: "cancel" },
+          {
+            text: "削除",
+            style: "destructive",
+            onPress: () => deleteMutation.mutate({ id: eventId }),
+          },
+        ]
+      );
+    }
   };
 
   const formatDate = (date: Date) => {
