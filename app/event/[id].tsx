@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Link } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
@@ -119,50 +121,20 @@ export default function EventDetailScreen() {
           <ThemedText style={{ color: colors.tint }}>戻る</ThemedText>
         </Pressable>
         <View style={styles.headerActions}>
-          {Platform.OS === "web" ? (
-            <>
-              <button
-                onClick={() => router.push(`/event/edit?id=${eventId}` as any)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <IconSymbol name="pencil" size={22} color={colors.tint} />
-              </button>
-              <button
-                onClick={handleDelete}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <IconSymbol name="trash.fill" size={22} color={colors.error} />
-              </button>
-            </>
-          ) : (
-            <>
-              <Pressable
-                onPress={() => router.push(`/event/edit?id=${eventId}` as any)}
-                style={styles.headerButton}
-              >
-                <IconSymbol name="pencil" size={22} color={colors.tint} />
-              </Pressable>
-              <Pressable onPress={handleDelete} style={styles.headerButton}>
-                <IconSymbol name="trash.fill" size={22} color={colors.error} />
-              </Pressable>
-            </>
-          )}
+          <TouchableOpacity
+            onPress={() => router.push(`/event/edit?id=${eventId}` as any)}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <IconSymbol name="pencil" size={22} color={colors.tint} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <IconSymbol name="trash.fill" size={22} color={colors.error} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -259,6 +231,16 @@ export default function EventDetailScreen() {
             </ThemedText>
           </View>
         )}
+
+        {/* Delete Button */}
+        <Link href={`/event/delete/${eventId}` as any} asChild>
+          <View style={[styles.deleteButton, { borderColor: colors.error }]}>
+            <IconSymbol name="trash.fill" size={20} color={colors.error} />
+            <ThemedText style={{ color: colors.error, fontWeight: "600" }}>
+              この予定を削除
+            </ThemedText>
+          </View>
+        </Link>
       </ScrollView>
     </ThemedView>
   );
@@ -340,5 +322,15 @@ const styles = StyleSheet.create({
   sectionContent: {
     flex: 1,
     gap: 4,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 16,
   },
 });
