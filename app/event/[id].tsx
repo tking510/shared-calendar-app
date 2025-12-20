@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -120,15 +119,50 @@ export default function EventDetailScreen() {
           <ThemedText style={{ color: colors.tint }}>戻る</ThemedText>
         </Pressable>
         <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => router.push(`/event/edit?id=${eventId}` as any)}
-            style={styles.headerButton}
-          >
-            <IconSymbol name="pencil" size={22} color={colors.tint} />
-          </Pressable>
-          <TouchableOpacity onPress={handleDelete} style={styles.headerButton} activeOpacity={0.7}>
-            <IconSymbol name="trash.fill" size={22} color={colors.error} />
-          </TouchableOpacity>
+          {Platform.OS === "web" ? (
+            <>
+              <button
+                onClick={() => router.push(`/event/edit?id=${eventId}` as any)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <IconSymbol name="pencil" size={22} color={colors.tint} />
+              </button>
+              <button
+                onClick={handleDelete}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <IconSymbol name="trash.fill" size={22} color={colors.error} />
+              </button>
+            </>
+          ) : (
+            <>
+              <Pressable
+                onPress={() => router.push(`/event/edit?id=${eventId}` as any)}
+                style={styles.headerButton}
+              >
+                <IconSymbol name="pencil" size={22} color={colors.tint} />
+              </Pressable>
+              <Pressable onPress={handleDelete} style={styles.headerButton}>
+                <IconSymbol name="trash.fill" size={22} color={colors.error} />
+              </Pressable>
+            </>
+          )}
         </View>
       </View>
 
