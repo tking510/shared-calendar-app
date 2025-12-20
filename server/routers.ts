@@ -24,6 +24,12 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    updateMyTelegramChatId: protectedProcedure
+      .input(z.object({ telegramChatId: z.string().nullable() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserTelegramChatId(ctx.user.id, input.telegramChatId);
+        return { success: true };
+      }),
   }),
 
   // Tags API

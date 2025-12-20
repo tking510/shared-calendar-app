@@ -121,6 +121,12 @@ export async function getUserById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function updateUserTelegramChatId(userId: number, telegramChatId: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ telegramChatId }).where(eq(users.id, userId));
+}
+
 // ============ Tag Functions ============
 export async function getUserTags(userId: number) {
   const db = await getDb();

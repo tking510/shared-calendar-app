@@ -46,6 +46,10 @@ export default function SettingsScreen() {
   const [botToken, setBotToken] = useState("");
   const [chatId, setChatId] = useState("");
   const [threadId, setThreadId] = useState("");
+  
+  // Personal Telegram notification state
+  const [showPersonalTelegramModal, setShowPersonalTelegramModal] = useState(false);
+  const [myTelegramChatId, setMyTelegramChatId] = useState("");
 
   // Friends management state
   const [showFriendModal, setShowFriendModal] = useState(false);
@@ -101,6 +105,13 @@ export default function SettingsScreen() {
     }
   }, [telegramSettings]);
 
+  // Update personal telegram chat id when user is loaded
+  useEffect(() => {
+    if (user?.telegramChatId) {
+      setMyTelegramChatId(user.telegramChatId);
+    }
+  }, [user]);
+
   // Update selected departments when myDepartments is loaded
   useEffect(() => {
     if (myDepartments) {
@@ -150,6 +161,15 @@ export default function SettingsScreen() {
       } else {
         Alert.alert("失敗", "通知の送信に失敗しました。設定を確認してください。");
       }
+    },
+    onError: (error) => Alert.alert("エラー", error.message),
+  });
+
+  // Personal Telegram notification mutation
+  const updateMyTelegramChatIdMutation = trpc.auth.updateMyTelegramChatId.useMutation({
+    onSuccess: () => {
+      setShowPersonalTelegramModal(false);
+      Alert.alert("保存しました", "個人Telegram通知設定を保存しました");
     },
     onError: (error) => Alert.alert("エラー", error.message),
   });
@@ -520,10 +540,37 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Telegram Section */}
+        {/* Personal Telegram Notification Section */}
         <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Telegram通知
+            個人Telegram通知
+          </ThemedText>
+          <Pressable
+            style={[styles.card, { backgroundColor: colors.card }]}
+            onPress={() => setShowPersonalTelegramModal(true)}
+          >
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <IconSymbol name="bell.fill" size={24} color={colors.tint} />
+                <View>
+                  <ThemedText type="defaultSemiBold">個人通知設定</ThemedText>
+                  <ThemedText style={{ color: colors.textSecondary, fontSize: 13 }}>
+                    {user?.telegramChatId ? "設定済み" : "未設定"}
+                  </ThemedText>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+            </View>
+          </Pressable>
+          <ThemedText style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8, paddingHorizontal: 4 }}>
+            自分のTelegramに直接通知を受け取るための設定です
+          </ThemedText>
+        </View>
+
+        {/* Group Telegram Section */}
+        <View style={[styles.section, { maxWidth: maxContentWidth, width: '100%' }]}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            グループTelegram通知
           </ThemedText>
           <Pressable
             style={[styles.card, { backgroundColor: colors.card }]}
@@ -533,7 +580,7 @@ export default function SettingsScreen() {
               <View style={styles.settingInfo}>
                 <IconSymbol name="paperplane.fill" size={24} color={colors.tint} />
                 <View>
-                  <ThemedText type="defaultSemiBold">Telegram設定</ThemedText>
+                  <ThemedText type="defaultSemiBold">Bot設定（グループ/チャンネル）</ThemedText>
                   <ThemedText style={{ color: colors.textSecondary, fontSize: 13 }}>
                     {telegramSettings?.enabled ? "有効" : "未設定"}
                   </ThemedText>
@@ -886,6 +933,92 @@ export default function SettingsScreen() {
                 5. @userinfobot でChat IDを取得
               </ThemedText>
             </View>
+          </ScrollView>
+        </ThemedView>
+      </Modal>
+
+      {/* Personal Telegram Modal */}
+      <Modal
+        visible={showPersonalTelegramModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPersonalTelegramModal(false)}
+      >
+        <ThemedView style={[styles.modalContainer, { paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={styles.modalHeader}>
+            <Pressable onPress={() => setShowPersonalTelegramModal(false)}>
+              <ThemedText style={{ color: colors.tint }}>キャンセル</ThemedText>
+            </Pressable>
+            <ThemedText type="defaultSemiBold">個人Telegram通知</ThemedText>
+            <Pressable
+              onPress={() => {
+                updateMyTelegramChatIdMutation.mutate({
+                  telegramChatId: myTelegramChatId.trim() || null,
+                });
+              }}
+              disabled={updateMyTelegramChatIdMutation.isPending}
+            >
+              {updateMyTelegramChatIdMutation.isPending ? (
+                <ActivityIndicator size="small" color={colors.tint} />
+              ) : (
+                <ThemedText style={{ color: colors.tint, fontWeight: "600" }}>保存</ThemedText>
+              )}
+            </Pressable>
+          </View>
+          <ScrollView style={styles.modalContent}>
+            <ThemedText style={{ color: colors.textSecondary, marginBottom: 16, lineHeight: 22 }}>
+              あなたの個人Chat IDを入力すると、予定にタグ付けされたときに直接通知を受け取れます。
+            </ThemedText>
+
+            <ThemedText style={{ marginBottom: 8, fontWeight: "600" }}>あなたのChat ID</ThemedText>
+            <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="123456789"
+                placeholderTextColor={colors.textDisabled}
+                value={myTelegramChatId}
+                onChangeText={setMyTelegramChatId}
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+
+            <View style={[styles.helpBox, { backgroundColor: colors.backgroundSecondary, marginTop: 24 }]}>
+              <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+                Chat IDの取得方法
+              </ThemedText>
+              <ThemedText style={{ color: colors.textSecondary, lineHeight: 22 }}>
+                1. Telegramで @userinfobot を検索{"\n"}
+                2. ボットとのチャットを開始{"\n"}
+                3. 表示された「Id」の数字をコピー
+              </ThemedText>
+            </View>
+
+            {myTelegramChatId.trim() && (
+              <Pressable
+                style={[styles.deleteButton, { marginTop: 24 }]}
+                onPress={() => {
+                  Alert.alert(
+                    "確認",
+                    "個人Telegram通知設定を削除しますか？",
+                    [
+                      { text: "キャンセル", style: "cancel" },
+                      {
+                        text: "削除",
+                        style: "destructive",
+                        onPress: () => {
+                          setMyTelegramChatId("");
+                          updateMyTelegramChatIdMutation.mutate({ telegramChatId: null });
+                        },
+                      },
+                    ]
+                  );
+                }}
+              >
+                <ThemedText style={{ color: colors.error, fontWeight: "600" }}>
+                  設定を削除
+                </ThemedText>
+              </Pressable>
+            )}
           </ScrollView>
         </ThemedView>
       </Modal>
@@ -1314,5 +1447,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     marginBottom: 8,
+  },
+  deleteButton: {
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.3)",
   },
 });

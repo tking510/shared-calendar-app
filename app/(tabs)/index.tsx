@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
+import { Colors, Shadows, BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
@@ -223,7 +223,9 @@ export default function CalendarScreen() {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.loginPrompt}>
-          <IconSymbol name="calendar" size={64} color={colors.tint} />
+          <View style={[styles.loginIconContainer, { backgroundColor: colors.tintLight }]}>
+            <IconSymbol name="calendar" size={48} color={colors.tint} />
+          </View>
           <ThemedText type="title" style={styles.loginTitle}>
             共有カレンダー
           </ThemedText>
@@ -231,7 +233,7 @@ export default function CalendarScreen() {
             ログインして予定を管理しましょう
           </ThemedText>
           <Pressable
-            style={[styles.loginButton, { backgroundColor: colors.tint }]}
+            style={[styles.loginButton, { backgroundColor: colors.tint }, Shadows.md]}
             onPress={() => router.push("/login")}
           >
             <ThemedText style={styles.loginButtonText}>ログイン</ThemedText>
@@ -247,20 +249,26 @@ export default function CalendarScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitle}>
-          <ThemedText type="title">
-            {currentDate.getFullYear()}年 {MONTHS[currentDate.getMonth()]}
+          <ThemedText style={styles.headerYear}>{currentDate.getFullYear()}年</ThemedText>
+          <ThemedText type="title" style={styles.headerMonth}>
+            {MONTHS[currentDate.getMonth()]}
           </ThemedText>
         </View>
         <View style={styles.headerButtons}>
-          <Pressable onPress={goToToday} style={styles.todayButton}>
-            <ThemedText style={{ color: colors.tint }}>今日</ThemedText>
+          <Pressable 
+            onPress={goToToday} 
+            style={[styles.todayButton, { backgroundColor: colors.tintLight }]}
+          >
+            <ThemedText style={[styles.todayButtonText, { color: colors.tint }]}>今日</ThemedText>
           </Pressable>
-          <Pressable onPress={goToPreviousMonth} style={styles.navButton}>
-            <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-          </Pressable>
-          <Pressable onPress={goToNextMonth} style={styles.navButton}>
-            <IconSymbol name="chevron.right" size={24} color={colors.tint} />
-          </Pressable>
+          <View style={styles.navButtons}>
+            <Pressable onPress={goToPreviousMonth} style={[styles.navButton, { backgroundColor: colors.backgroundTertiary }]}>
+              <IconSymbol name="chevron.left" size={20} color={colors.text} />
+            </Pressable>
+            <Pressable onPress={goToNextMonth} style={[styles.navButton, { backgroundColor: colors.backgroundTertiary }]}>
+              <IconSymbol name="chevron.right" size={20} color={colors.text} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -271,7 +279,7 @@ export default function CalendarScreen() {
             <ThemedText
               style={[
                 styles.dayHeaderText,
-                { color: index === 0 ? colors.error : index === 6 ? colors.tint : colors.textSecondary },
+                { color: index === 0 ? colors.sunday : index === 6 ? colors.saturday : colors.textSecondary },
               ]}
             >
               {day}
@@ -287,23 +295,23 @@ export default function CalendarScreen() {
             key={index}
             style={[
               styles.dayCell,
-              isSelectedDate(day.date) && { backgroundColor: colors.tint + "20" },
+              isSelectedDate(day.date) && [styles.selectedDayCell, { backgroundColor: colors.tintLight }],
             ]}
             onPress={() => setSelectedDate(day.date)}
           >
             <View
               style={[
                 styles.dayNumber,
-                day.isToday && { backgroundColor: colors.tint },
+                day.isToday && [styles.todayNumber, { backgroundColor: colors.tint }],
               ]}
             >
               <ThemedText
                 style={[
                   styles.dayText,
                   !day.isCurrentMonth && { color: colors.textDisabled },
-                  day.isToday && { color: "#FFFFFF" },
-                  index % 7 === 0 && day.isCurrentMonth && !day.isToday && { color: colors.error },
-                  index % 7 === 6 && day.isCurrentMonth && !day.isToday && { color: colors.tint },
+                  day.isToday && styles.todayText,
+                  index % 7 === 0 && day.isCurrentMonth && !day.isToday && { color: colors.sunday },
+                  index % 7 === 6 && day.isCurrentMonth && !day.isToday && { color: colors.saturday },
                 ]}
               >
                 {day.date.getDate()}
@@ -331,22 +339,32 @@ export default function CalendarScreen() {
   );
 
   const renderEventsSection = () => (
-    <View style={[styles.eventsSection, { backgroundColor: colors.backgroundSecondary }, isDesktop && { flex: 1, marginTop: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderRadius: 16, marginLeft: 16 }]}>
+    <View style={[
+      styles.eventsSection, 
+      { backgroundColor: colors.card },
+      isDesktop && styles.eventsSectionDesktop,
+      Shadows.sm,
+    ]}>
       <View style={styles.eventsSectionHeader}>
-        <ThemedText type="subtitle">
-          {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日の予定
-        </ThemedText>
-        <ThemedText style={{ color: colors.textSecondary }}>
-          {selectedDateEvents.length}件
-        </ThemedText>
+        <View>
+          <ThemedText style={[styles.eventsSectionDate, { color: colors.textSecondary }]}>
+            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日
+          </ThemedText>
+          <ThemedText type="subtitle" style={styles.eventsSectionTitle}>
+            {selectedDateEvents.length > 0 ? `${selectedDateEvents.length}件の予定` : "予定なし"}
+          </ThemedText>
+        </View>
       </View>
 
       {isLoading ? (
         <ActivityIndicator style={styles.eventsLoading} color={colors.tint} />
       ) : selectedDateEvents.length === 0 ? (
         <View style={styles.noEvents}>
-          <ThemedText style={{ color: colors.textSecondary }}>
-            予定はありません
+          <View style={[styles.noEventsIcon, { backgroundColor: colors.backgroundTertiary }]}>
+            <IconSymbol name="calendar" size={32} color={colors.textDisabled} />
+          </View>
+          <ThemedText style={[styles.noEventsText, { color: colors.textSecondary }]}>
+            この日の予定はありません
           </ThemedText>
         </View>
       ) : (
@@ -356,9 +374,10 @@ export default function CalendarScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
+          contentContainerStyle={styles.eventsList}
           renderItem={({ item }) => (
             <Pressable
-              style={[styles.eventCard, { backgroundColor: colors.card }]}
+              style={[styles.eventCard, { backgroundColor: colors.backgroundSecondary }]}
               onPress={() => router.push(`/event/${item.id}`)}
             >
               <View
@@ -368,17 +387,20 @@ export default function CalendarScreen() {
                 ]}
               />
               <View style={styles.eventContent}>
-                <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                <ThemedText style={styles.eventTitle} numberOfLines={1}>
                   {item.title}
                 </ThemedText>
-                <ThemedText style={{ color: colors.textSecondary, fontSize: 14 }}>
-                  {item.startTime.getHours().toString().padStart(2, "0")}:
-                  {item.startTime.getMinutes().toString().padStart(2, "0")} -
-                  {item.endTime.getHours().toString().padStart(2, "0")}:
-                  {item.endTime.getMinutes().toString().padStart(2, "0")}
-                </ThemedText>
+                <View style={styles.eventTimeRow}>
+                  <IconSymbol name="clock" size={14} color={colors.textSecondary} />
+                  <ThemedText style={[styles.eventTime, { color: colors.textSecondary }]}>
+                    {item.startTime.getHours().toString().padStart(2, "0")}:
+                    {item.startTime.getMinutes().toString().padStart(2, "0")} -
+                    {item.endTime.getHours().toString().padStart(2, "0")}:
+                    {item.endTime.getMinutes().toString().padStart(2, "0")}
+                  </ThemedText>
+                </View>
               </View>
-              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+              <IconSymbol name="chevron.right" size={18} color={colors.textDisabled} />
             </Pressable>
           )}
         />
@@ -404,7 +426,7 @@ export default function CalendarScreen() {
 
       {/* FAB */}
       <Pressable
-        style={[styles.fab, { backgroundColor: colors.tint, bottom: insets.bottom + 16 }]}
+        style={[styles.fab, { backgroundColor: colors.tint, bottom: insets.bottom + 16 }, Shadows.lg]}
         onPress={() => router.push(`/event/new?date=${selectedDate.toISOString()}`)}
       >
         <IconSymbol name="plus" size={28} color="#FFFFFF" />
@@ -420,7 +442,8 @@ const styles = StyleSheet.create({
   desktopLayout: {
     flex: 1,
     flexDirection: 'row',
-    padding: 16,
+    padding: Spacing.lg,
+    gap: Spacing.lg,
   },
   calendarSection: {
     flex: 1,
@@ -434,20 +457,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 32,
+    padding: Spacing.xxl,
+  },
+  loginIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
   },
   loginTitle: {
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   loginText: {
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: Spacing.xl,
+    fontSize: 15,
+    lineHeight: 22,
   },
   loginButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
   },
   loginButtonText: {
     color: "#FFFFFF",
@@ -457,42 +489,67 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    alignItems: "flex-end",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   headerTitle: {
     flex: 1,
   },
+  headerYear: {
+    fontSize: 13,
+    opacity: 0.6,
+    marginBottom: 2,
+  },
+  headerMonth: {
+    fontSize: 28,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+  },
   headerButtons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.md,
   },
   todayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+  },
+  todayButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  navButtons: {
+    flexDirection: "row",
+    gap: Spacing.xs,
   },
   navButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayHeaders: {
     flexDirection: "row",
-    paddingHorizontal: 8,
+    paddingHorizontal: Spacing.sm,
+    marginTop: Spacing.sm,
   },
   dayHeader: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: Spacing.sm,
   },
   dayHeaderText: {
     fontSize: 12,
     fontWeight: "600",
+    textTransform: "uppercase",
   },
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 8,
+    paddingHorizontal: Spacing.sm,
   },
   dayCell: {
     width: "14.28%",
@@ -500,7 +557,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     paddingTop: 4,
-    borderRadius: 8,
+    borderRadius: BorderRadius.md,
+  },
+  selectedDayCell: {
+    borderRadius: BorderRadius.md,
   },
   dayNumber: {
     width: 32,
@@ -509,70 +569,116 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  todayNumber: {
+    // backgroundColor set inline
+  },
   dayText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
+  },
+  todayText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   eventDots: {
     flexDirection: "row",
-    gap: 2,
-    marginTop: 2,
+    gap: 3,
+    marginTop: 3,
   },
   eventDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   eventsSection: {
     flex: 1,
-    marginTop: 8,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 16,
+    marginTop: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    paddingTop: Spacing.lg,
+  },
+  eventsSectionDesktop: {
+    flex: 1,
+    marginTop: 0,
+    borderTopLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: BorderRadius.lg,
+    borderBottomLeftRadius: BorderRadius.lg,
+    borderBottomRightRadius: BorderRadius.lg,
+    marginLeft: 0,
   },
   eventsSectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  eventsSectionDate: {
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  eventsSectionTitle: {
+    fontSize: 18,
   },
   eventsLoading: {
-    marginTop: 32,
+    marginTop: Spacing.xxl,
   },
   noEvents: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingBottom: Spacing.xxl,
+  },
+  noEventsIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  noEventsText: {
+    fontSize: 15,
+  },
+  eventsList: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
   eventCard: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 12,
+    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.md,
     overflow: "hidden",
   },
   eventColorBar: {
     width: 4,
-    height: "100%",
+    alignSelf: "stretch",
   },
   eventContent: {
     flex: 1,
-    padding: 12,
+    padding: Spacing.md,
+  },
+  eventTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  eventTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  eventTime: {
+    fontSize: 13,
   },
   fab: {
     position: "absolute",
-    right: 16,
+    right: Spacing.lg,
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
   },
 });

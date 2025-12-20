@@ -29,6 +29,7 @@ const MAPPING = {
   "checkmark": "check",
   "chevron.left": "chevron-left",
   "clock.fill": "schedule",
+  "clock": "schedule",
   "location.fill": "location-on",
   "repeat": "repeat",
   "square.and.arrow.up": "share",

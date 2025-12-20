@@ -51,6 +51,7 @@ export function useAuth(options?: UseAuthOptions) {
               name: data.user.name,
               email: data.user.email,
               loginMethod: data.user.loginMethod,
+              telegramChatId: data.user.telegramChatId || null,
               lastSignedIn: new Date(data.user.lastSignedIn),
             };
             setUser(userInfo);

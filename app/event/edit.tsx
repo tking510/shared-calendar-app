@@ -97,6 +97,9 @@ export default function EditEventScreen() {
       setRepeatType(event.repeatType as any);
       setSelectedTags(event.tags?.map((t) => t.id) || []);
       setSelectedReminders(event.reminders?.map((r) => r.minutesBefore) || [15]);
+      setSelectedFriends(event.friends?.map((f) => f.id) || []);
+      setSelectedDepartments(event.departments?.map((d) => d.id) || []);
+      setCustomMessage(event.reminders?.[0]?.customMessage || "");
       setIsLoaded(true);
     }
   }, [event, isLoaded]);

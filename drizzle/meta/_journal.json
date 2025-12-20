@@ -50,6 +50,13 @@
       "when": 1766187771719,
       "tag": "0006_naive_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1766261873776,
+      "tag": "0007_easy_firebird",
+      "breakpoints": true
     }
   ]
 }
