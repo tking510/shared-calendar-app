@@ -97,8 +97,8 @@ export default function NewEventScreen() {
       title: title.trim(),
       description: description.trim() || undefined,
       location: location.trim() || undefined,
-      startTime: startDate.toISOString(),
-      endTime: endDate.toISOString(),
+      startTime: formatLocalDateTime(startDate),
+      endTime: formatLocalDateTime(endDate),
       allDay,
       repeatType,
       tagIds: selectedTags,
@@ -115,6 +115,17 @@ export default function NewEventScreen() {
 
   const formatTime = (d: Date) => {
     return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  // Format date as local ISO string (without timezone conversion)
+  const formatLocalDateTime = (d: Date) => {
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
+    const hours = d.getHours().toString().padStart(2, "0");
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+    const seconds = d.getSeconds().toString().padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   };
 
   const toggleTag = (tagId: number) => {
