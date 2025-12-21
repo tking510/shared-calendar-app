@@ -11,7 +11,6 @@ import {
   TextInput,
   View,
   Platform,
-  Switch,
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,7 +58,7 @@ export default function NewEventScreen() {
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState(initialDate);
   const [endDate, setEndDate] = useState(new Date(initialDate.getTime() + 60 * 60 * 1000));
-  const [allDay, setAllDay] = useState(false);
+  const allDay = false; // 終日オプションは無効化
   const [repeatType, setRepeatType] = useState<"none" | "daily" | "weekly" | "monthly" | "yearly">("none");
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [selectedReminders, setSelectedReminders] = useState<number[]>([15]);
@@ -197,17 +196,7 @@ export default function NewEventScreen() {
           />
         </View>
 
-        {/* All Day Toggle */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
-          <View style={styles.switchRow}>
-            <ThemedText>終日</ThemedText>
-            <Switch
-              value={allDay}
-              onValueChange={setAllDay}
-              trackColor={{ false: colors.border, true: colors.tint }}
-            />
-          </View>
-        </View>
+
 
         {/* Date & Time */}
         <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
@@ -218,15 +207,13 @@ export default function NewEventScreen() {
             <ThemedText>開始日</ThemedText>
             <ThemedText style={{ color: colors.tint }}>{formatDate(startDate)}</ThemedText>
           </Pressable>
-          {!allDay && (
-            <Pressable
-              style={styles.dateTimeRow}
-              onPress={() => setShowStartTimePicker(true)}
-            >
-              <ThemedText>開始時刻</ThemedText>
-              <ThemedText style={{ color: colors.tint }}>{formatTime(startDate)}</ThemedText>
-            </Pressable>
-          )}
+          <Pressable
+            style={styles.dateTimeRow}
+            onPress={() => setShowStartTimePicker(true)}
+          >
+            <ThemedText>開始時刻</ThemedText>
+            <ThemedText style={{ color: colors.tint }}>{formatTime(startDate)}</ThemedText>
+          </Pressable>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <Pressable
             style={styles.dateTimeRow}
@@ -235,15 +222,13 @@ export default function NewEventScreen() {
             <ThemedText>終了日</ThemedText>
             <ThemedText style={{ color: colors.tint }}>{formatDate(endDate)}</ThemedText>
           </Pressable>
-          {!allDay && (
-            <Pressable
-              style={styles.dateTimeRow}
-              onPress={() => setShowEndTimePicker(true)}
-            >
-              <ThemedText>終了時刻</ThemedText>
-              <ThemedText style={{ color: colors.tint }}>{formatTime(endDate)}</ThemedText>
-            </Pressable>
-          )}
+          <Pressable
+            style={styles.dateTimeRow}
+            onPress={() => setShowEndTimePicker(true)}
+          >
+            <ThemedText>終了時刻</ThemedText>
+            <ThemedText style={{ color: colors.tint }}>{formatTime(endDate)}</ThemedText>
+          </Pressable>
         </View>
 
         {/* Date/Time Pickers */}
