@@ -77,9 +77,12 @@ export default function NewEventScreen() {
   const { data: tags } = trpc.tags.list.useQuery();
   const { data: friends } = trpc.friends.list.useQuery();
   const { data: departments } = trpc.departments.list.useQuery();
+  const utils = trpc.useUtils();
 
   const createMutation = trpc.events.create.useMutation({
     onSuccess: () => {
+      // Invalidate events cache to refresh the calendar
+      utils.events.list.invalidate();
       router.back();
     },
     onError: (error) => {
