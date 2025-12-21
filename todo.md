@@ -113,4 +113,4 @@
 
 ## バグ修正（v7.11）
 
-- [ ] Vercelデプロイ版で予定が反映されない問題を修正
+- [x] Vercelデプロイ版で予定が反映されない問題を修正（Railway DBにtelegramChatIdカラム追加）
