@@ -1,0 +1,9 @@
+{
+  "query": "SELECT sc.id as calendar_id, sc.name as calendar_name, sc.inviteCode, \n       cm.userId, cm.role, u.name as user_name,\n       e.id as event_id, e.title as event_title, e.calendarId as event_calendarId\nFROM shared_calendars sc\nLEFT JOIN calendar_members cm ON sc.id = cm.calendarId\nLEFT JOIN users u ON cm.userId = u.id\nLEFT JOIN events e ON sc.id = e.calendarId\nORDER BY sc.id, cm.userId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute SELECT sc.id as calendar_id, sc.name as calendar_name, sc.inviteCode, \n       cm.userId, cm.role, u.name as user_name,\n       e.id as event_id, e.title as event_title, e.calendarId as event_calendarId\nFROM shared_calendars sc\nLEFT JOIN calendar_members cm ON sc.id = cm.calendarId\nLEFT JOIN users u ON cm.userId = u.id\nLEFT JOIN events e ON sc.id = e.calendarId\nORDER BY sc.id, cm.userId;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2985
+}

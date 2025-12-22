@@ -39,7 +39,8 @@ const REPEAT_OPTIONS = [
 ];
 
 export default function NewEventScreen() {
-  const { date } = useLocalSearchParams<{ date?: string }>();
+  const { date, calendarId: calendarIdParam } = useLocalSearchParams<{ date?: string; calendarId?: string }>();
+  const calendarId = calendarIdParam ? parseInt(calendarIdParam, 10) : undefined;
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -82,6 +83,10 @@ export default function NewEventScreen() {
     onSuccess: () => {
       // Invalidate events cache to refresh the calendar
       utils.events.list.invalidate();
+      // Also invalidate shared calendar events if calendarId is set
+      if (calendarId) {
+        utils.calendars.getEvents.invalidate({ calendarId });
+      }
       router.back();
     },
     onError: (error) => {
@@ -103,6 +108,7 @@ export default function NewEventScreen() {
       endTime: formatLocalDateTime(endDate),
       allDay,
       repeatType,
+      calendarId,
       tagIds: selectedTags,
       reminderMinutes: selectedReminders,
       friendIds: selectedFriends,

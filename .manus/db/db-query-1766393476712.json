@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, userId, calendarId, title, startTime FROM events LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute SELECT id, userId, calendarId, title, startTime FROM events LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "userId": "240001",
+      "calendarId": "NULL",
+      "title": "チーム京都清算",
+      "startTime": "2025-12-22 03:00:18"
+    },
+    {
+      "id": "30002",
+      "userId": "240016",
+      "calendarId": "NULL",
+      "title": "B君　引継ぎ",
+      "startTime": "2025-12-22 07:00:00"
+    },
+    {
+      "id": "30003",
+      "userId": "240001",
+      "calendarId": "NULL",
+      "title": "べー君",
+      "startTime": "2025-12-22 05:00:00"
+    },
+    {
+      "id": "30004",
+      "userId": "210001",
+      "calendarId": "NULL",
+      "title": "テスト予定1",
+      "startTime": "2025-12-21 18:08:44"
+    },
+    {
+      "id": "30005",
+      "userId": "210001",
+      "calendarId": "NULL",
+      "title": "テスト予定2（22日）",
+      "startTime": "2025-12-22 05:00:00"
+    },
+    {
+      "id": "30006",
+      "userId": "210001",
+      "calendarId": "NULL",
+      "title": "テスト予定3（23日）",
+      "startTime": "2025-12-23 05:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tcalendarId\ttitle\tstartTime\n30001\t240001\tNULL\tチーム京都清算\t2025-12-22 03:00:18\n30002\t240016\tNULL\tB君　引継ぎ\t2025-12-22 07:00:00\n30003\t240001\tNULL\tべー君\t2025-12-22 05:00:00\n30004\t210001\tNULL\tテスト予定1\t2025-12-21 18:08:44\n30005\t210001\tNULL\tテスト予定2（22日）\t2025-12-22 05:00:00\n30006\t210001\tNULL\tテスト予定3（23日）\t2025-12-23 05:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 1538
+}

@@ -75,6 +75,11 @@ export default function SharedCalendarDetailScreen() {
     });
   };
 
+  // Navigate to new event screen with calendarId
+  const handleAddEvent = () => {
+    router.push(`/event/new?calendarId=${calendarId}` as any);
+  };
+
   if (isLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
@@ -101,6 +106,9 @@ export default function SharedCalendarDetailScreen() {
       </ThemedView>
     );
   }
+
+  // Check if user can add events (owner or editor)
+  const canAddEvents = calendar.role === "owner" || calendar.role === "editor";
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
@@ -145,6 +153,15 @@ export default function SharedCalendarDetailScreen() {
       {/* Events List */}
       <View style={styles.sectionHeader}>
         <ThemedText type="subtitle">予定一覧</ThemedText>
+        {canAddEvents && (
+          <Pressable 
+            onPress={handleAddEvent} 
+            style={[styles.addButton, { backgroundColor: colors.tint }]}
+          >
+            <IconSymbol name="plus" size={16} color="#FFFFFF" />
+            <ThemedText style={styles.addButtonText}>予定を追加</ThemedText>
+          </Pressable>
+        )}
       </View>
 
       {events && events.length > 0 ? (
@@ -177,6 +194,14 @@ export default function SharedCalendarDetailScreen() {
           <ThemedText style={{ color: colors.textSecondary, marginTop: 12 }}>
             予定がありません
           </ThemedText>
+          {canAddEvents && (
+            <Pressable 
+              onPress={handleAddEvent}
+              style={[styles.emptyAddButton, { backgroundColor: colors.tint }]}
+            >
+              <ThemedText style={styles.addButtonText}>予定を追加する</ThemedText>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -277,9 +302,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 24,
     paddingBottom: 12,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  addButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyAddButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
   listContent: {
     padding: 16,
