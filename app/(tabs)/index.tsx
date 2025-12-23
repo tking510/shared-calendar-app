@@ -20,7 +20,13 @@ import { Colors, Shadows, BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-import { getDatePartsMY, formatTimeShortMY } from "@/lib/timezone";
+// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
+const formatTimeLocal = (date: Date | string): string => {
+  const d = new Date(date);
+  const hours = d.getUTCHours().toString().padStart(2, "0");
+  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
 
 const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const MONTHS = [
@@ -394,7 +400,7 @@ export default function CalendarScreen() {
                 <View style={styles.eventTimeRow}>
                   <IconSymbol name="clock" size={14} color={colors.textSecondary} />
                   <ThemedText style={[styles.eventTime, { color: colors.textSecondary }]}>
-                    {formatTimeShortMY(item.startTime)} - {formatTimeShortMY(item.endTime)}
+                    {formatTimeLocal(item.startTime)} - {formatTimeLocal(item.endTime)}
                   </ThemedText>
                 </View>
               </View>

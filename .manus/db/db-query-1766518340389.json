@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, title, userId FROM events ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute SELECT id, title, userId FROM events ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "30006",
+      "title": "テスト予定3（23日）",
+      "userId": "210001"
+    },
+    {
+      "id": "30005",
+      "title": "テスト予定2（22日）",
+      "userId": "210001"
+    },
+    {
+      "id": "30004",
+      "title": "テスト予定1",
+      "userId": "210001"
+    },
+    {
+      "id": "30003",
+      "title": "べー君",
+      "userId": "240001"
+    },
+    {
+      "id": "30002",
+      "title": "B君　引継ぎ",
+      "userId": "240016"
+    },
+    {
+      "id": "30001",
+      "title": "チーム京都清算",
+      "userId": "240001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tuserId\n30006\tテスト予定3（23日）\t210001\n30005\tテスト予定2（22日）\t210001\n30004\tテスト予定1\t210001\n30003\tべー君\t240001\n30002\tB君　引継ぎ\t240016\n30001\tチーム京都清算\t240001\n",
+  "stderr": "",
+  "execution_time_ms": 1570
+}

@@ -17,7 +17,17 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-import { formatDateMY, formatTimeShortMY, getDatePartsMY } from "@/lib/timezone";
+// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
+const formatTimeLocal = (date: Date | string): string => {
+  const d = new Date(date);
+  const hours = d.getUTCHours().toString().padStart(2, "0");
+  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+const formatDateLocal = (date: Date | string): string => {
+  const d = new Date(date);
+  return `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日`;
+};
 
 const REMINDER_LABELS: Record<number, string> = {
   5: "5分前",
@@ -77,12 +87,11 @@ export default function EventDetailScreen() {
   };
 
   const formatDate = (date: Date) => {
-    const parts = getDatePartsMY(date);
-    return `${parts.year}年${parts.month}月${parts.day}日`;
+    return formatDateLocal(date);
   };
 
   const formatTime = (date: Date) => {
-    return formatTimeShortMY(date);
+    return formatTimeLocal(date);
   };
 
   if (isLoading) {

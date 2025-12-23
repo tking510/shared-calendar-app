@@ -3,10 +3,7 @@
  * This module handles sending Telegram notifications for upcoming events
  */
 
-import { getPendingReminders, markReminderNotified, sendTelegramMessage, getEventFriends } from "./db";
-
-// マレーシアのタイムゾーン
-const MALAYSIA_TIMEZONE = "Asia/Kuala_Lumpur";
+import { getPendingReminders, markReminderNotified, sendTelegramMessage, getEventFriends, getUserById } from "./db";
 
 const REMINDER_LABELS: Record<number, string> = {
   5: "5分後",
@@ -17,26 +14,23 @@ const REMINDER_LABELS: Record<number, string> = {
 };
 
 /**
- * マレーシア時間で時刻をフォーマット（HH:MM形式）
+ * タイムゾーン変換なしで時刻をフォーマット（HH:MM形式）
+ * DBにはローカル時間として保存されている
  */
 function formatEventTime(date: Date): string {
-  return date.toLocaleTimeString("ja-JP", {
-    timeZone: MALAYSIA_TIMEZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const hours = date.getUTCHours().toString().padStart(2, "0");
+  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 /**
- * マレーシア時間で日付をフォーマット
+ * タイムゾーン変換なしで日付をフォーマット
+ * DBにはローカル時間として保存されている
  */
 function formatEventDate(date: Date): string {
-  return date.toLocaleDateString("ja-JP", {
-    timeZone: MALAYSIA_TIMEZONE,
-    month: "long",
-    day: "numeric",
-  });
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
+  return `${month}月${day}日`;
 }
 
 export async function processReminders(): Promise<{ processed: number; sent: number }> {
@@ -78,6 +72,21 @@ export async function processReminders(): Promise<{ processed: number; sent: num
         }
       } catch (friendError) {
         console.error(`[Reminder] Error sending to friends:`, friendError);
+      }
+
+      // Send notification to self if notifySelf is enabled
+      if (event.notifySelf) {
+        try {
+          const user = await getUserById(event.userId);
+          if (user && user.telegramChatId) {
+            await sendTelegramMessage(event.userId, message, user.telegramChatId);
+            console.log(`[Reminder] Sent self-notification to user ${event.userId} (${user.telegramChatId})`);
+          } else {
+            console.log(`[Reminder] Self-notification enabled but no personal Telegram Chat ID set for user ${event.userId}`);
+          }
+        } catch (selfError) {
+          console.error(`[Reminder] Error sending self-notification:`, selfError);
+        }
       }
       
       if (success) {

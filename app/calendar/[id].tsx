@@ -21,7 +21,21 @@ import { Colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-import { MALAYSIA_TIMEZONE, formatTimeShortMY } from "@/lib/timezone";
+// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
+const formatTimeLocal = (date: Date | string): string => {
+  const d = new Date(date);
+  const hours = d.getUTCHours().toString().padStart(2, "0");
+  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+const formatDateLocal = (date: Date | string): string => {
+  const d = new Date(date);
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const weekday = weekdays[d.getUTCDay()];
+  return `${month}月${day}日(${weekday})`;
+};
 
 export default function SharedCalendarDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -60,17 +74,11 @@ export default function SharedCalendarDetailScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
-      timeZone: MALAYSIA_TIMEZONE,
-      month: "short",
-      day: "numeric",
-      weekday: "short",
-    });
+    return formatDateLocal(dateString);
   };
 
   const formatTime = (dateString: string) => {
-    return formatTimeShortMY(dateString);
+    return formatTimeLocal(dateString);
   };
 
   // Navigate to new event screen with calendarId

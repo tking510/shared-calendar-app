@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   TextInput,
   View,
   Platform,
@@ -21,7 +22,17 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-import { formatDateShortMY, formatTimeShortMY, getDatePartsMY } from "@/lib/timezone";
+// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
+const formatTimeLocal = (date: Date | string): string => {
+  const d = new Date(date);
+  const hours = d.getUTCHours().toString().padStart(2, "0");
+  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+const formatDateLocalShort = (date: Date | string): string => {
+  const d = new Date(date);
+  return `${d.getUTCFullYear()}/${(d.getUTCMonth() + 1).toString().padStart(2, "0")}/${d.getUTCDate().toString().padStart(2, "0")}`;
+};
 
 // Get tRPC utils for cache invalidation
 
@@ -68,6 +79,7 @@ export default function EditEventScreen() {
   const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
   const [customMessage, setCustomMessage] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>([]);
+  const [notifySelf, setNotifySelf] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -100,6 +112,7 @@ export default function EditEventScreen() {
       setSelectedFriends(event.friends?.map((f) => f.id) || []);
       setSelectedDepartments(event.departments?.map((d) => d.id) || []);
       setCustomMessage(event.reminders?.[0]?.customMessage || "");
+      setNotifySelf(event.notifySelf ?? false);
       setIsLoaded(true);
     }
   }, [event, isLoaded]);
@@ -138,15 +151,16 @@ export default function EditEventScreen() {
       friendIds: selectedFriends,
       customMessage: customMessage.trim() || undefined,
       departmentIds: selectedDepartments,
+      notifySelf,
     });
   };
 
   const formatDate = (d: Date) => {
-    return formatDateShortMY(d);
+    return formatDateLocalShort(d);
   };
 
   const formatTime = (d: Date) => {
-    return formatTimeShortMY(d);
+    return formatTimeLocal(d);
   };
 
   // Format date as local ISO string (without timezone conversion)
@@ -184,7 +198,7 @@ export default function EditEventScreen() {
     );
   };
 
-  if (eventLoading || !isLoaded) {
+  if (eventLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.tint} />
@@ -196,6 +210,12 @@ export default function EditEventScreen() {
     return (
       <ThemedView style={styles.loadingContainer}>
         <ThemedText>予定が見つかりません</ThemedText>
+        <Pressable
+          style={[styles.backButton, { backgroundColor: colors.tint, marginTop: 16 }]}
+          onPress={() => router.back()}
+        >
+          <ThemedText style={{ color: "#fff" }}>戻る</ThemedText>
+        </Pressable>
       </ThemedView>
     );
   }
@@ -494,6 +514,24 @@ export default function EditEventScreen() {
           </View>
         </View>
 
+        {/* Self Notification */}
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
+          <View style={styles.switchRow}>
+            <View style={styles.sectionHeader}>
+              <IconSymbol name="person.fill" size={20} color={colors.textSecondary} />
+              <ThemedText type="defaultSemiBold">自分への通知</ThemedText>
+            </View>
+            <Switch
+              value={notifySelf}
+              onValueChange={setNotifySelf}
+              trackColor={{ false: colors.border, true: colors.tint }}
+            />
+          </View>
+          <ThemedText style={{ color: colors.textSecondary, fontSize: 13, marginTop: 8 }}>
+            ONにすると、設定画面で登録した個人Telegram Chat IDに通知が届きます
+          </ThemedText>
+        </View>
+
         {/* Description */}
         <View style={[styles.inputSection, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
           <TextInput
@@ -619,5 +657,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
+  },
+  backButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
   },
 });

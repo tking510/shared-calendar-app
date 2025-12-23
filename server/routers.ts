@@ -126,6 +126,7 @@ export const appRouter = router({
           friendIds: z.array(z.number()).optional(),
           departmentIds: z.array(z.number()).optional(),
           customMessage: z.string().optional(),
+          notifySelf: z.boolean().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -139,6 +140,7 @@ export const appRouter = router({
           endTime: new Date(input.endTime),
           allDay: input.allDay ?? false,
           repeatType: input.repeatType ?? "none",
+          notifySelf: input.notifySelf ?? false,
         });
 
         // Set tags
@@ -186,6 +188,7 @@ export const appRouter = router({
           friendIds: z.array(z.number()).optional(),
           departmentIds: z.array(z.number()).optional(),
           customMessage: z.string().optional(),
+          notifySelf: z.boolean().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -197,6 +200,7 @@ export const appRouter = router({
         if (input.endTime !== undefined) updateData.endTime = new Date(input.endTime);
         if (input.allDay !== undefined) updateData.allDay = input.allDay;
         if (input.repeatType !== undefined) updateData.repeatType = input.repeatType;
+        if (input.notifySelf !== undefined) updateData.notifySelf = input.notifySelf;
 
         await db.updateEvent(input.id, ctx.user.id, updateData);
 

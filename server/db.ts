@@ -240,7 +240,17 @@ export async function deleteEventReminders(eventId: number) {
 export async function getPendingReminders() {
   const db = await getDb();
   if (!db) return [];
+  
+  // 現在時刻をマレーシア時間（GMT+8）として取得
+  // DBにはローカル時間（マレーシア時間）がそのまま保存されている
+  // 例: 16:00マレーシア時間 → DBには "2024-12-24T16:00:00" として保存
+  // これをJavaScriptのDateで読み込むとUTCとして解釈される
+  
   const now = new Date();
+  // UTC時刻に8時間を加算してマレーシア時間を取得
+  const malaysiaOffset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+  const nowMalaysiaTime = now.getTime() + malaysiaOffset;
+  
   // Get all events with pending reminders
   const result = await db
     .select({
@@ -253,8 +263,23 @@ export async function getPendingReminders() {
 
   // Filter reminders that should be sent now
   return result.filter(({ reminder, event }) => {
-    const notifyTime = new Date(event.startTime.getTime() - reminder.minutesBefore * 60 * 1000);
-    return notifyTime <= now;
+    // event.startTimeはDBから取得した時刻
+    // DBにはマレーシア時間がそのまま保存されているが、JavaScriptはUTCとして解釈
+    // 例: DBの "16:00" → JavaScriptでは UTC 16:00 として解釈
+    // 現在時刻もUTCとして比較するため、マレーシア時間をUTCの数値として比較
+    const eventStartMs = event.startTime.getTime();
+    const notifyTimeMs = eventStartMs - reminder.minutesBefore * 60 * 1000;
+    // 現在のマレーシア時間を同じ形式で比較
+    // nowMalaysiaTimeはUTC + 8hのミリ秒値
+    // DBの時刻はUTCとして解釈されるので、比較のために調整
+    // 例: DBに16:00が保存 → eventStartMs = UTC 16:00のミリ秒
+    // 現在マレーシア時間が16:00なら → nowMalaysiaTime = UTC 08:00 + 8h = UTC 16:00のミリ秒
+    // つまり、nowMalaysiaTimeをそのまま比較すればOK
+    // しかし、nowMalaysiaTimeはnow.getTime() + 8hなので、UTCとしては8時間先の時刻
+    // DBの時刻はUTCとして解釈されるので、そのまま比較すればいい
+    // 実際: now.getTime()がUTC 08:00なら、nowMalaysiaTimeはUTC 16:00のミリ秒値
+    // DBの16:00はUTC 16:00として解釈されるので、一致する
+    return notifyTimeMs <= nowMalaysiaTime;
   });
 }
 

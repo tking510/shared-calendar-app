@@ -75,6 +75,7 @@ export const events = mysqlTable("events", {
   endTime: timestamp("endTime").notNull(),
   allDay: boolean("allDay").default(false).notNull(),
   repeatType: mysqlEnum("repeatType", ["none", "daily", "weekly", "monthly", "yearly"]).default("none").notNull(),
+  notifySelf: boolean("notifySelf").default(false).notNull(), // Whether to send reminder to self
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   TextInput,
   View,
   Platform,
@@ -21,7 +22,15 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-import { formatDateShortMY, formatTimeShortMY } from "@/lib/timezone";
+// タイムゾーン変換なしで時間を表示（ローカル時間をそのまま使用）
+const formatTimeLocalDisplay = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+const formatDateLocalDisplay = (date: Date): string => {
+  return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getDate().toString().padStart(2, "0")}`;
+};
 
 const REMINDER_OPTIONS = [
   { value: 5, label: "5分前" },
@@ -67,6 +76,7 @@ export default function NewEventScreen() {
   const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
   const [customMessage, setCustomMessage] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>([]);
+  const [notifySelf, setNotifySelf] = useState(false);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
@@ -115,15 +125,16 @@ export default function NewEventScreen() {
       friendIds: selectedFriends,
       customMessage: customMessage.trim() || undefined,
       departmentIds: selectedDepartments,
+      notifySelf,
     });
   };
 
   const formatDate = (d: Date) => {
-    return formatDateShortMY(d);
+    return formatDateLocalDisplay(d);
   };
 
   const formatTime = (d: Date) => {
-    return formatTimeShortMY(d);
+    return formatTimeLocalDisplay(d);
   };
 
   // Format date as local ISO string (without timezone conversion)
@@ -559,6 +570,24 @@ export default function NewEventScreen() {
               </Pressable>
             ))}
           </View>
+        </View>
+
+        {/* Self Notification */}
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
+          <View style={styles.switchRow}>
+            <View style={styles.sectionHeader}>
+              <IconSymbol name="person.fill" size={20} color={colors.textSecondary} />
+              <ThemedText type="defaultSemiBold">自分への通知</ThemedText>
+            </View>
+            <Switch
+              value={notifySelf}
+              onValueChange={setNotifySelf}
+              trackColor={{ false: colors.border, true: colors.tint }}
+            />
+          </View>
+          <ThemedText style={{ color: colors.textSecondary, fontSize: 13, marginTop: 8 }}>
+            ONにすると、設定画面で登録した個人Telegram Chat IDに通知が届きます
+          </ThemedText>
         </View>
 
         {/* Description */}
