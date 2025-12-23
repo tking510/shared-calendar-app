@@ -599,3 +599,182 @@ describe("Admin Authentication", () => {
     expect(verifyAdminCredentials("wrongid", "wrongpassword")).toBe(false);
   });
 });
+
+
+describe("Shared Calendar System", () => {
+  // Mock shared calendar data
+  const mockSharedCalendar = {
+    id: 1,
+    name: "チームカレンダー",
+    inviteCode: "ABC12345",
+    ownerId: 1,
+  };
+
+  const mockCalendarMembers = [
+    { userId: 1, calendarId: 1, role: "owner" },
+    { userId: 2, calendarId: 1, role: "editor" },
+    { userId: 3, calendarId: 1, role: "viewer" },
+  ];
+
+  // Helper function to check if user can add events
+  function canUserAddEvents(userId: number, members: typeof mockCalendarMembers): boolean {
+    const member = members.find(m => m.userId === userId);
+    if (!member) return false;
+    return member.role === "owner" || member.role === "editor";
+  }
+
+  // Helper function to check if user can view calendar
+  function canUserViewCalendar(userId: number, members: typeof mockCalendarMembers): boolean {
+    return members.some(m => m.userId === userId);
+  }
+
+  describe("Calendar membership", () => {
+    it("should allow owner to add events", () => {
+      expect(canUserAddEvents(1, mockCalendarMembers)).toBe(true);
+    });
+
+    it("should allow editor to add events", () => {
+      expect(canUserAddEvents(2, mockCalendarMembers)).toBe(true);
+    });
+
+    it("should not allow viewer to add events", () => {
+      expect(canUserAddEvents(3, mockCalendarMembers)).toBe(false);
+    });
+
+    it("should not allow non-member to add events", () => {
+      expect(canUserAddEvents(999, mockCalendarMembers)).toBe(false);
+    });
+
+    it("should allow all members to view calendar", () => {
+      expect(canUserViewCalendar(1, mockCalendarMembers)).toBe(true);
+      expect(canUserViewCalendar(2, mockCalendarMembers)).toBe(true);
+      expect(canUserViewCalendar(3, mockCalendarMembers)).toBe(true);
+    });
+
+    it("should not allow non-member to view calendar", () => {
+      expect(canUserViewCalendar(999, mockCalendarMembers)).toBe(false);
+    });
+  });
+
+  describe("Invite code validation", () => {
+    function isValidInviteCode(code: string): boolean {
+      return /^[A-Z0-9]{8}$/.test(code);
+    }
+
+    it("should accept valid 8-character alphanumeric code", () => {
+      expect(isValidInviteCode("ABC12345")).toBe(true);
+      expect(isValidInviteCode("ABCD1234")).toBe(true);
+    });
+
+    it("should reject codes that are too short", () => {
+      expect(isValidInviteCode("ABC123")).toBe(false);
+    });
+
+    it("should reject codes that are too long", () => {
+      expect(isValidInviteCode("ABC123456")).toBe(false);
+    });
+
+    it("should reject codes with lowercase letters", () => {
+      expect(isValidInviteCode("abc12345")).toBe(false);
+    });
+
+    it("should reject codes with special characters", () => {
+      expect(isValidInviteCode("ABC1234!")).toBe(false);
+    });
+  });
+
+  describe("Shared calendar events", () => {
+    const mockSharedEvents = [
+      { id: 1, calendarId: 1, userId: 1, title: "チームミーティング" },
+      { id: 2, calendarId: 1, userId: 2, title: "プロジェクトレビュー" },
+      { id: 3, calendarId: 2, userId: 1, title: "別のカレンダーの予定" },
+    ];
+
+    function getEventsForCalendar(calendarId: number) {
+      return mockSharedEvents.filter(e => e.calendarId === calendarId);
+    }
+
+    it("should return only events for the specified calendar", () => {
+      const events = getEventsForCalendar(1);
+      expect(events.length).toBe(2);
+      expect(events.every(e => e.calendarId === 1)).toBe(true);
+    });
+
+    it("should return empty array for calendar with no events", () => {
+      const events = getEventsForCalendar(999);
+      expect(events.length).toBe(0);
+    });
+
+    it("should include events created by different users", () => {
+      const events = getEventsForCalendar(1);
+      const userIds = [...new Set(events.map(e => e.userId))];
+      expect(userIds.length).toBeGreaterThan(1);
+    });
+  });
+});
+
+describe("Event Creation with CalendarId", () => {
+  interface CreateEventInput {
+    title: string;
+    startTime: string;
+    endTime: string;
+    calendarId?: number;
+  }
+
+  function validateCreateEventInput(input: CreateEventInput): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!input.title || input.title.trim().length === 0) {
+      errors.push("タイトルを入力してください");
+    }
+    
+    if (!input.startTime) {
+      errors.push("開始時刻を設定してください");
+    }
+    
+    if (!input.endTime) {
+      errors.push("終了時刻を設定してください");
+    }
+    
+    // calendarId is optional - if not provided, event is personal
+    // if provided, it should be a positive number
+    if (input.calendarId !== undefined && input.calendarId <= 0) {
+      errors.push("無効なカレンダーIDです");
+    }
+    
+    return { valid: errors.length === 0, errors };
+  }
+
+  it("should accept event without calendarId (personal event)", () => {
+    const input = {
+      title: "個人の予定",
+      startTime: "2024-01-15T10:00:00",
+      endTime: "2024-01-15T11:00:00",
+    };
+    const result = validateCreateEventInput(input);
+    expect(result.valid).toBe(true);
+  });
+
+  it("should accept event with valid calendarId (shared event)", () => {
+    const input = {
+      title: "共有の予定",
+      startTime: "2024-01-15T10:00:00",
+      endTime: "2024-01-15T11:00:00",
+      calendarId: 1,
+    };
+    const result = validateCreateEventInput(input);
+    expect(result.valid).toBe(true);
+  });
+
+  it("should reject event with invalid calendarId", () => {
+    const input = {
+      title: "無効な予定",
+      startTime: "2024-01-15T10:00:00",
+      endTime: "2024-01-15T11:00:00",
+      calendarId: -1,
+    };
+    const result = validateCreateEventInput(input);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("無効なカレンダーIDです");
+  });
+});

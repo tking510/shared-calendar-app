@@ -20,6 +20,7 @@ import { Colors, Shadows, BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
+import { getDatePartsMY, formatTimeShortMY } from "@/lib/timezone";
 
 const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const MONTHS = [
@@ -393,10 +394,7 @@ export default function CalendarScreen() {
                 <View style={styles.eventTimeRow}>
                   <IconSymbol name="clock" size={14} color={colors.textSecondary} />
                   <ThemedText style={[styles.eventTime, { color: colors.textSecondary }]}>
-                    {item.startTime.getHours().toString().padStart(2, "0")}:
-                    {item.startTime.getMinutes().toString().padStart(2, "0")} -
-                    {item.endTime.getHours().toString().padStart(2, "0")}:
-                    {item.endTime.getMinutes().toString().padStart(2, "0")}
+                    {formatTimeShortMY(item.startTime)} - {formatTimeShortMY(item.endTime)}
                   </ThemedText>
                 </View>
               </View>

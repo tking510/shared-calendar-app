@@ -5,6 +5,9 @@
 
 import { getPendingReminders, markReminderNotified, sendTelegramMessage, getEventFriends } from "./db";
 
+// マレーシアのタイムゾーン
+const MALAYSIA_TIMEZONE = "Asia/Kuala_Lumpur";
+
 const REMINDER_LABELS: Record<number, string> = {
   5: "5分後",
   15: "15分後",
@@ -13,12 +16,27 @@ const REMINDER_LABELS: Record<number, string> = {
   1440: "明日",
 };
 
+/**
+ * マレーシア時間で時刻をフォーマット（HH:MM形式）
+ */
 function formatEventTime(date: Date): string {
-  return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  return date.toLocaleTimeString("ja-JP", {
+    timeZone: MALAYSIA_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
+/**
+ * マレーシア時間で日付をフォーマット
+ */
 function formatEventDate(date: Date): string {
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return date.toLocaleDateString("ja-JP", {
+    timeZone: MALAYSIA_TIMEZONE,
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export async function processReminders(): Promise<{ processed: number; sent: number }> {

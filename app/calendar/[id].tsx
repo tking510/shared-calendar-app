@@ -21,6 +21,7 @@ import { Colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
+import { MALAYSIA_TIMEZONE, formatTimeShortMY } from "@/lib/timezone";
 
 export default function SharedCalendarDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,6 +62,7 @@ export default function SharedCalendarDetailScreen() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("ja-JP", {
+      timeZone: MALAYSIA_TIMEZONE,
       month: "short",
       day: "numeric",
       weekday: "short",
@@ -68,11 +70,7 @@ export default function SharedCalendarDetailScreen() {
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatTimeShortMY(dateString);
   };
 
   // Navigate to new event screen with calendarId

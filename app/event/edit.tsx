@@ -21,6 +21,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
+import { formatDateShortMY, formatTimeShortMY, getDatePartsMY } from "@/lib/timezone";
 
 // Get tRPC utils for cache invalidation
 
@@ -141,11 +142,11 @@ export default function EditEventScreen() {
   };
 
   const formatDate = (d: Date) => {
-    return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getDate().toString().padStart(2, "0")}`;
+    return formatDateShortMY(d);
   };
 
   const formatTime = (d: Date) => {
-    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+    return formatTimeShortMY(d);
   };
 
   // Format date as local ISO string (without timezone conversion)

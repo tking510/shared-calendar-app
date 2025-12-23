@@ -17,6 +17,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
+import { formatDateMY, formatTimeShortMY, getDatePartsMY } from "@/lib/timezone";
 
 const REMINDER_LABELS: Record<number, string> = {
   5: "5分前",
@@ -76,13 +77,12 @@ export default function EventDetailScreen() {
   };
 
   const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    const parts = getDatePartsMY(date);
+    return `${parts.year}年${parts.month}月${parts.day}日`;
   };
 
   const formatTime = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+    return formatTimeShortMY(date);
   };
 
   if (isLoading) {
