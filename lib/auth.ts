@@ -9,6 +9,7 @@ export type User = {
   email: string | null;
   loginMethod: string | null;
   telegramChatId: string | null;
+  telegramUsername: string | null;
   lastSignedIn: Date;
 };
 

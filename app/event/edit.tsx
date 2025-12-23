@@ -8,7 +8,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   TextInput,
   View,
   Platform,
@@ -79,7 +78,6 @@ export default function EditEventScreen() {
   const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
   const [customMessage, setCustomMessage] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>([]);
-  const [notifySelf, setNotifySelf] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -112,7 +110,6 @@ export default function EditEventScreen() {
       setSelectedFriends(event.friends?.map((f) => f.id) || []);
       setSelectedDepartments(event.departments?.map((d) => d.id) || []);
       setCustomMessage(event.reminders?.[0]?.customMessage || "");
-      setNotifySelf(event.notifySelf ?? false);
       setIsLoaded(true);
     }
   }, [event, isLoaded]);
@@ -151,7 +148,6 @@ export default function EditEventScreen() {
       friendIds: selectedFriends,
       customMessage: customMessage.trim() || undefined,
       departmentIds: selectedDepartments,
-      notifySelf,
     });
   };
 
@@ -512,24 +508,6 @@ export default function EditEventScreen() {
               </Pressable>
             ))}
           </View>
-        </View>
-
-        {/* Self Notification */}
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, maxWidth: maxContentWidth, width: '100%' }]}>
-          <View style={styles.switchRow}>
-            <View style={styles.sectionHeader}>
-              <IconSymbol name="person.fill" size={20} color={colors.textSecondary} />
-              <ThemedText type="defaultSemiBold">自分への通知</ThemedText>
-            </View>
-            <Switch
-              value={notifySelf}
-              onValueChange={setNotifySelf}
-              trackColor={{ false: colors.border, true: colors.tint }}
-            />
-          </View>
-          <ThemedText style={{ color: colors.textSecondary, fontSize: 13, marginTop: 8 }}>
-            ONにすると、設定画面で登録した個人Telegram Chat IDに通知が届きます
-          </ThemedText>
         </View>
 
         {/* Description */}

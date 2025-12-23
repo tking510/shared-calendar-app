@@ -58,7 +58,25 @@ export async function processReminders(): Promise<{ processed: number; sent: num
         message += `\n\n📝 ${reminder.customMessage}`;
       }
 
-      const success = await sendTelegramMessage(event.userId, message);
+      // Check if notifySelf is enabled and user has a telegram username
+      let messageWithMention = message;
+      if (event.notifySelf) {
+        try {
+          const eventUser = await getUserById(event.userId);
+          if (eventUser?.telegramUsername) {
+            // Add mention to the message
+            const username = eventUser.telegramUsername.startsWith('@') 
+              ? eventUser.telegramUsername 
+              : `@${eventUser.telegramUsername}`;
+            messageWithMention = `${username}\n\n${message}`;
+            console.log(`[Reminder] Adding mention for user ${username}`);
+          }
+        } catch (userError) {
+          console.error(`[Reminder] Error getting user for mention:`, userError);
+        }
+      }
+
+      const success = await sendTelegramMessage(event.userId, messageWithMention);
 
       // Send notifications to friends tagged in the event
       try {
@@ -72,21 +90,6 @@ export async function processReminders(): Promise<{ processed: number; sent: num
         }
       } catch (friendError) {
         console.error(`[Reminder] Error sending to friends:`, friendError);
-      }
-
-      // Send notification to self if notifySelf is enabled
-      if (event.notifySelf) {
-        try {
-          const user = await getUserById(event.userId);
-          if (user && user.telegramChatId) {
-            await sendTelegramMessage(event.userId, message, user.telegramChatId);
-            console.log(`[Reminder] Sent self-notification to user ${event.userId} (${user.telegramChatId})`);
-          } else {
-            console.log(`[Reminder] Self-notification enabled but no personal Telegram Chat ID set for user ${event.userId}`);
-          }
-        } catch (selfError) {
-          console.error(`[Reminder] Error sending self-notification:`, selfError);
-        }
       }
       
       if (success) {

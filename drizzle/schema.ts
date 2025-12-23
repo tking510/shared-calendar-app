@@ -11,6 +11,7 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 255 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   telegramChatId: varchar("telegramChatId", { length: 100 }), // User's personal Telegram Chat ID for notifications
+  telegramUsername: varchar("telegramUsername", { length: 100 }), // User's Telegram username for mentions (@username)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

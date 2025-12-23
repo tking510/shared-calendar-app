@@ -66,6 +66,7 @@ export default function LoginScreen() {
         email: data.user.email,
         loginMethod: data.user.loginMethod,
         telegramChatId: data.user.telegramChatId || null,
+        telegramUsername: data.user.telegramUsername || null,
         lastSignedIn: new Date(data.user.lastSignedIn),
       });
 
@@ -112,6 +113,7 @@ export default function LoginScreen() {
         email: data.user.email,
         loginMethod: data.user.loginMethod,
         telegramChatId: data.user.telegramChatId || null,
+        telegramUsername: data.user.telegramUsername || null,
         lastSignedIn: new Date(data.user.lastSignedIn),
       });
 

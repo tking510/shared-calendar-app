@@ -30,6 +30,12 @@ export const appRouter = router({
         await db.updateUserTelegramChatId(ctx.user.id, input.telegramChatId);
         return { success: true };
       }),
+    updateMyTelegramUsername: protectedProcedure
+      .input(z.object({ telegramUsername: z.string().nullable() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserTelegramUsername(ctx.user.id, input.telegramUsername);
+        return { success: true };
+      }),
   }),
 
   // Tags API
@@ -126,7 +132,6 @@ export const appRouter = router({
           friendIds: z.array(z.number()).optional(),
           departmentIds: z.array(z.number()).optional(),
           customMessage: z.string().optional(),
-          notifySelf: z.boolean().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -140,7 +145,6 @@ export const appRouter = router({
           endTime: new Date(input.endTime),
           allDay: input.allDay ?? false,
           repeatType: input.repeatType ?? "none",
-          notifySelf: input.notifySelf ?? false,
         });
 
         // Set tags
@@ -188,7 +192,6 @@ export const appRouter = router({
           friendIds: z.array(z.number()).optional(),
           departmentIds: z.array(z.number()).optional(),
           customMessage: z.string().optional(),
-          notifySelf: z.boolean().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -200,7 +203,6 @@ export const appRouter = router({
         if (input.endTime !== undefined) updateData.endTime = new Date(input.endTime);
         if (input.allDay !== undefined) updateData.allDay = input.allDay;
         if (input.repeatType !== undefined) updateData.repeatType = input.repeatType;
-        if (input.notifySelf !== undefined) updateData.notifySelf = input.notifySelf;
 
         await db.updateEvent(input.id, ctx.user.id, updateData);
 

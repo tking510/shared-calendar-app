@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `telegramUsername` varchar(100);
