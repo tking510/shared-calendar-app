@@ -57,20 +57,6 @@
       "when": 1766261873776,
       "tag": "0007_easy_firebird",
       "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "5",
-      "when": 1766523837193,
-      "tag": "0008_real_the_liberteens",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "5",
-      "when": 1766525531470,
-      "tag": "0009_wandering_mimic",
-      "breakpoints": true
     }
   ]
 }

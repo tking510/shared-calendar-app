@@ -11,7 +11,6 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 255 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   telegramChatId: varchar("telegramChatId", { length: 100 }), // User's personal Telegram Chat ID for notifications
-  telegramUsername: varchar("telegramUsername", { length: 100 }), // User's Telegram username for mentions (@username)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -76,7 +75,6 @@ export const events = mysqlTable("events", {
   endTime: timestamp("endTime").notNull(),
   allDay: boolean("allDay").default(false).notNull(),
   repeatType: mysqlEnum("repeatType", ["none", "daily", "weekly", "monthly", "yearly"]).default("none").notNull(),
-  notifySelf: boolean("notifySelf").default(false).notNull(), // Whether to send reminder to self
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1,1 +1,0 @@
--- notifySelf column already exists in database

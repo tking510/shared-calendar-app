@@ -50,7 +50,6 @@ export default function SettingsScreen() {
   // Personal Telegram notification state
   const [showPersonalTelegramModal, setShowPersonalTelegramModal] = useState(false);
   const [myTelegramChatId, setMyTelegramChatId] = useState("");
-  const [myTelegramUsername, setMyTelegramUsername] = useState("");
 
   // Friends management state
   const [showFriendModal, setShowFriendModal] = useState(false);
@@ -111,9 +110,6 @@ export default function SettingsScreen() {
     if (user?.telegramChatId) {
       setMyTelegramChatId(user.telegramChatId);
     }
-    if (user?.telegramUsername) {
-      setMyTelegramUsername(user.telegramUsername);
-    }
   }, [user]);
 
   // Update selected departments when myDepartments is loaded
@@ -171,13 +167,6 @@ export default function SettingsScreen() {
 
   // Personal Telegram notification mutation
   const updateMyTelegramChatIdMutation = trpc.auth.updateMyTelegramChatId.useMutation({
-    onSuccess: () => {
-      // Don't close modal here, wait for username to be saved too
-    },
-    onError: (error) => Alert.alert("エラー", error.message),
-  });
-
-  const updateMyTelegramUsernameMutation = trpc.auth.updateMyTelegramUsername.useMutation({
     onSuccess: () => {
       setShowPersonalTelegramModal(false);
       Alert.alert("保存しました", "個人Telegram通知設定を保存しました");
@@ -966,13 +955,10 @@ export default function SettingsScreen() {
                 updateMyTelegramChatIdMutation.mutate({
                   telegramChatId: myTelegramChatId.trim() || null,
                 });
-                updateMyTelegramUsernameMutation.mutate({
-                  telegramUsername: myTelegramUsername.trim() || null,
-                });
               }}
-              disabled={updateMyTelegramChatIdMutation.isPending || updateMyTelegramUsernameMutation.isPending}
+              disabled={updateMyTelegramChatIdMutation.isPending}
             >
-              {(updateMyTelegramChatIdMutation.isPending || updateMyTelegramUsernameMutation.isPending) ? (
+              {updateMyTelegramChatIdMutation.isPending ? (
                 <ActivityIndicator size="small" color={colors.tint} />
               ) : (
                 <ThemedText style={{ color: colors.tint, fontWeight: "600" }}>保存</ThemedText>
@@ -984,22 +970,7 @@ export default function SettingsScreen() {
               あなたの個人Chat IDを入力すると、予定にタグ付けされたときに直接通知を受け取れます。
             </ThemedText>
 
-            <ThemedText style={{ marginBottom: 8, fontWeight: "600" }}>あなたのTelegramユーザー名（メンション用）</ThemedText>
-            <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="@username"
-                placeholderTextColor={colors.textDisabled}
-                value={myTelegramUsername}
-                onChangeText={setMyTelegramUsername}
-                autoCapitalize="none"
-              />
-            </View>
-            <ThemedText style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8, marginBottom: 16 }}>
-              グループ通知であなたをメンション（@username）するために使用します
-            </ThemedText>
-
-            <ThemedText style={{ marginBottom: 8, fontWeight: "600" }}>あなたのChat ID（任意）</ThemedText>
+            <ThemedText style={{ marginBottom: 8, fontWeight: "600" }}>あなたのChat ID</ThemedText>
             <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary }]}>
               <TextInput
                 style={[styles.input, { color: colors.text }]}
@@ -1010,17 +981,15 @@ export default function SettingsScreen() {
                 keyboardType="numbers-and-punctuation"
               />
             </View>
-            <ThemedText style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }}>
-              個人に直接通知を受け取る場合に設定してください
-            </ThemedText>
 
             <View style={[styles.helpBox, { backgroundColor: colors.backgroundSecondary, marginTop: 24 }]}>
               <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                設定方法
+                Chat IDの取得方法
               </ThemedText>
               <ThemedText style={{ color: colors.textSecondary, lineHeight: 22 }}>
-                <ThemedText style={{ fontWeight: "600" }}>ユーザー名:</ThemedText> Telegramの設定から確認{"\n"}
-                <ThemedText style={{ fontWeight: "600" }}>Chat ID:</ThemedText> @userinfobot で取得
+                1. Telegramで @userinfobot を検索{"\n"}
+                2. ボットとのチャットを開始{"\n"}
+                3. 表示された「Id」の数字をコピー
               </ThemedText>
             </View>
 

@@ -30,12 +30,6 @@ export const appRouter = router({
         await db.updateUserTelegramChatId(ctx.user.id, input.telegramChatId);
         return { success: true };
       }),
-    updateMyTelegramUsername: protectedProcedure
-      .input(z.object({ telegramUsername: z.string().nullable() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateUserTelegramUsername(ctx.user.id, input.telegramUsername);
-        return { success: true };
-      }),
   }),
 
   // Tags API

@@ -21,7 +21,6 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
     loginMethod: "manus",
     role: "user",
     telegramChatId: null,
-    telegramUsername: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedIn: new Date(),

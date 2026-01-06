@@ -3,7 +3,7 @@
  * This module handles sending Telegram notifications for upcoming events
  */
 
-import { getPendingReminders, markReminderNotified, sendTelegramMessage, getEventFriends, getUserById } from "./db";
+import { getPendingReminders, markReminderNotified, sendTelegramMessage, getEventFriends } from "./db";
 
 const REMINDER_LABELS: Record<number, string> = {
   5: "5分後",
@@ -58,25 +58,7 @@ export async function processReminders(): Promise<{ processed: number; sent: num
         message += `\n\n📝 ${reminder.customMessage}`;
       }
 
-      // Check if notifySelf is enabled and user has a telegram username
-      let messageWithMention = message;
-      if (event.notifySelf) {
-        try {
-          const eventUser = await getUserById(event.userId);
-          if (eventUser?.telegramUsername) {
-            // Add mention to the message
-            const username = eventUser.telegramUsername.startsWith('@') 
-              ? eventUser.telegramUsername 
-              : `@${eventUser.telegramUsername}`;
-            messageWithMention = `${username}\n\n${message}`;
-            console.log(`[Reminder] Adding mention for user ${username}`);
-          }
-        } catch (userError) {
-          console.error(`[Reminder] Error getting user for mention:`, userError);
-        }
-      }
-
-      const success = await sendTelegramMessage(event.userId, messageWithMention);
+      const success = await sendTelegramMessage(event.userId, message);
 
       // Send notifications to friends tagged in the event
       try {

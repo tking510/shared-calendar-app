@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, title, startTime, endTime FROM events ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3FX6HmRDv1HWZGw.d0b838c7ad2b --database W6CcAV5y8tpmnGxnXRz9Lh --execute SELECT id, title, startTime, endTime FROM events ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "60001",
+      "title": "テスト予定",
+      "startTime": "2025-12-24 16:10:17",
+      "endTime": "2025-12-24 17:10:17"
+    },
+    {
+      "id": "30006",
+      "title": "テスト予定3（23日）",
+      "startTime": "2025-12-23 05:00:00",
+      "endTime": "2025-12-23 06:00:00"
+    },
+    {
+      "id": "30005",
+      "title": "テスト予定2（22日）",
+      "startTime": "2025-12-22 05:00:00",
+      "endTime": "2025-12-22 06:00:00"
+    },
+    {
+      "id": "30004",
+      "title": "テスト予定1",
+      "startTime": "2025-12-21 18:08:44",
+      "endTime": "2025-12-21 19:08:44"
+    },
+    {
+      "id": "30003",
+      "title": "べー君",
+      "startTime": "2025-12-22 05:00:00",
+      "endTime": "2025-12-22 06:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstartTime\tendTime\n60001\tテスト予定\t2025-12-24 16:10:17\t2025-12-24 17:10:17\n30006\tテスト予定3（23日）\t2025-12-23 05:00:00\t2025-12-23 06:00:00\n30005\tテスト予定2（22日）\t2025-12-22 05:00:00\t2025-12-22 06:00:00\n30004\tテスト予定1\t2025-12-21 18:08:44\t2025-12-21 19:08:44\n30003\tべー君\t2025-12-22 05:00:00\t2025-12-22 06:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 1734
+}
