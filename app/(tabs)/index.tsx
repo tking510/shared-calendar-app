@@ -20,12 +20,11 @@ import { Colors, Shadows, BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
+import { getDatePartsMY, formatTimeShortMY } from "@/lib/timezone";
+
+// マレーシア時間で時刻をフォーマット
 const formatTimeLocal = (date: Date | string): string => {
-  const d = new Date(date);
-  const hours = d.getUTCHours().toString().padStart(2, "0");
-  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
+  return formatTimeShortMY(date);
 };
 
 const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -53,33 +52,47 @@ interface EventWithTags {
 }
 
 // Helper function to check if an event occurs on a specific date (including repeats)
+// マレーシア時間（GMT+8）で日付を比較
 function isEventOnDate(
   event: { startTime: Date | string; repeatType?: string },
   targetDate: Date
 ): boolean {
-  const eventStart = new Date(event.startTime);
-  const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-  const eventDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+  // イベントの開始時間をマレーシア時間で取得
+  const eventParts = getDatePartsMY(event.startTime);
+  const eventYear = eventParts.year;
+  const eventMonth = eventParts.month;
+  const eventDay = eventParts.day;
+  
+  // ターゲット日付（ローカルのカレンダー日付）
+  const targetYear = targetDate.getFullYear();
+  const targetMonth = targetDate.getMonth() + 1; // getMonth()は0始まり
+  const targetDay = targetDate.getDate();
+  
+  // ターゲットがイベント開始日より前ならマッチしない
+  const targetDateNum = targetYear * 10000 + targetMonth * 100 + targetDay;
+  const eventDateNum = eventYear * 10000 + eventMonth * 100 + eventDay;
+  if (targetDateNum < eventDateNum) return false;
 
-  // If target is before event start, no match
-  if (target < eventDate) return false;
+  // 同じ日付ならマッチ
+  if (targetYear === eventYear && targetMonth === eventMonth && targetDay === eventDay) {
+    return true;
+  }
 
-  // If same date, always match
-  if (target.getTime() === eventDate.getTime()) return true;
-
-  // Check repeat type
+  // 繰り返しタイプをチェック
+  const eventDate = new Date(event.startTime);
   switch (event.repeatType) {
     case "daily":
       return true;
-    case "weekly":
-      return target.getDay() === eventStart.getDay();
+    case "weekly": {
+      // マレーシア時間での曜日を取得
+      const eventDayOfWeek = new Date(eventYear, eventMonth - 1, eventDay).getDay();
+      const targetDayOfWeek = targetDate.getDay();
+      return targetDayOfWeek === eventDayOfWeek;
+    }
     case "monthly":
-      return target.getDate() === eventStart.getDate();
+      return targetDay === eventDay;
     case "yearly":
-      return (
-        target.getDate() === eventStart.getDate() &&
-        target.getMonth() === eventStart.getMonth()
-      );
+      return targetDay === eventDay && targetMonth === eventMonth;
     default:
       return false;
   }
