@@ -21,17 +21,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
-const formatTimeLocal = (date: Date | string): string => {
-  const d = new Date(date);
-  const hours = d.getUTCHours().toString().padStart(2, "0");
-  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
-};
-const formatDateLocalShort = (date: Date | string): string => {
-  const d = new Date(date);
-  return `${d.getUTCFullYear()}/${(d.getUTCMonth() + 1).toString().padStart(2, "0")}/${d.getUTCDate().toString().padStart(2, "0")}`;
-};
+import { formatTimeShortMY, formatDateShortMY, getDatePartsMY } from "@/lib/timezone";
 
 // Get tRPC utils for cache invalidation
 
@@ -95,14 +85,21 @@ export default function EditEventScreen() {
   const { data: friends } = trpc.friends.list.useQuery();
   const { data: departments } = trpc.departments.list.useQuery();
 
+  // UTC時間からマレーシア時間のローカルDateオブジェクトを作成
+  const createLocalDateFromUTC = (utcDate: Date | string): Date => {
+    const parts = getDatePartsMY(utcDate);
+    return new Date(parts.year, parts.month - 1, parts.day, parts.hours, parts.minutes, 0);
+  };
+
   // Load event data when fetched
   useEffect(() => {
     if (event && !isLoaded) {
       setTitle(event.title);
       setDescription(event.description || "");
       setLocation(event.location || "");
-      setStartDate(new Date(event.startTime));
-      setEndDate(new Date(event.endTime));
+      // UTC時間をマレーシア時間のローカルDateに変換
+      setStartDate(createLocalDateFromUTC(event.startTime));
+      setEndDate(createLocalDateFromUTC(event.endTime));
       // allDayは無効化されているためスキップ
       setRepeatType(event.repeatType as any);
       setSelectedTags(event.tags?.map((t) => t.id) || []);
@@ -152,11 +149,11 @@ export default function EditEventScreen() {
   };
 
   const formatDate = (d: Date) => {
-    return formatDateLocalShort(d);
+    return formatDateShortMY(d);
   };
 
   const formatTime = (d: Date) => {
-    return formatTimeLocal(d);
+    return formatTimeShortMY(d);
   };
 
   // Format date as local ISO string (without timezone conversion)
