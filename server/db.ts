@@ -158,11 +158,36 @@ export async function getUserEvents(userId: number, startDate?: Date, endDate?: 
   const db = await getDb();
   if (!db) return [];
 
-  const conditions = [eq(events.userId, userId)];
-  if (startDate) conditions.push(gte(events.startTime, startDate));
-  if (endDate) conditions.push(lte(events.endTime, endDate));
+  // Get user's personal events
+  const personalConditions = [eq(events.userId, userId)];
+  if (startDate) personalConditions.push(gte(events.startTime, startDate));
+  if (endDate) personalConditions.push(lte(events.endTime, endDate));
+  const personalEvents = await db.select().from(events).where(and(...personalConditions));
 
-  return db.select().from(events).where(and(...conditions));
+  // Get shared calendar IDs that the user is a member of
+  const memberCalendars = await db
+    .select({ calendarId: calendarMembers.calendarId })
+    .from(calendarMembers)
+    .where(eq(calendarMembers.userId, userId));
+  
+  const calendarIds = memberCalendars.map(m => m.calendarId);
+  
+  // Get events from shared calendars
+  let sharedEvents: typeof personalEvents = [];
+  if (calendarIds.length > 0) {
+    const sharedConditions = [inArray(events.calendarId, calendarIds)];
+    if (startDate) sharedConditions.push(gte(events.startTime, startDate));
+    if (endDate) sharedConditions.push(lte(events.endTime, endDate));
+    sharedEvents = await db.select().from(events).where(and(...sharedConditions));
+  }
+
+  // Combine and return all events (remove duplicates by id)
+  const allEvents = [...personalEvents, ...sharedEvents];
+  const uniqueEvents = allEvents.filter((event, index, self) =>
+    index === self.findIndex(e => e.id === event.id)
+  );
+  
+  return uniqueEvents;
 }
 
 export async function getEventById(id: number) {
