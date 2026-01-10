@@ -156,7 +156,8 @@ export default function EditEventScreen() {
     return formatTimeShortMY(d);
   };
 
-  // Format date as local ISO string (without timezone conversion)
+  // Format date as ISO string with Malaysia timezone offset (+08:00)
+  // This ensures the server interprets the time correctly regardless of server timezone
   const formatLocalDateTime = (d: Date) => {
     const year = d.getFullYear();
     const month = (d.getMonth() + 1).toString().padStart(2, "0");
@@ -164,7 +165,8 @@ export default function EditEventScreen() {
     const hours = d.getHours().toString().padStart(2, "0");
     const minutes = d.getMinutes().toString().padStart(2, "0");
     const seconds = d.getSeconds().toString().padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    // Add Malaysia timezone offset (+08:00) to ensure correct interpretation
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+08:00`;
   };
 
   const toggleTag = (tagId: number) => {
