@@ -17,16 +17,14 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { trpc } from "@/lib/trpc";
-// タイムゾーン変換なしで時間を表示（DBにはローカル時間として保存されている）
+import { formatTimeMY, formatDateMY } from "@/lib/timezone";
+
+// マレーシア時間（GMT+8）で表示
 const formatTimeLocal = (date: Date | string): string => {
-  const d = new Date(date);
-  const hours = d.getUTCHours().toString().padStart(2, "0");
-  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
+  return formatTimeMY(date);
 };
 const formatDateLocal = (date: Date | string): string => {
-  const d = new Date(date);
-  return `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日`;
+  return formatDateMY(date);
 };
 
 const REMINDER_LABELS: Record<number, string> = {
