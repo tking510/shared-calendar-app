@@ -45,8 +45,8 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // Fallback to Railway API URL for production
-  return "https://shared-calendar-app-production.up.railway.app";
+  // Fallback to Vercel API URL for production
+  return "https://shared-calendar-app-iota.vercel.app";
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
