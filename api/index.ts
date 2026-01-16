@@ -1,0 +1,65 @@
+import "dotenv/config";
+import express from "express";
+import cookieParser from "cookie-parser";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { registerOAuthRoutes } from "../server/_core/oauth";
+import { appRouter } from "../server/routers";
+import { createContext } from "../server/_core/context";
+import { handleTelegramWebhook } from "../server/telegram-webhook";
+import { handleRegister, handleLogin, handleGetMe, handleLogout } from "../server/simple-auth";
+
+const app = express();
+
+// Enable CORS for all routes - reflect the request origin to support credentials
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+  );
+  res.header("Access-Control-Allow-Credentials", "true");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(cookieParser());
+
+// Simple auth routes (ID/Password based)
+app.post("/api/simple-auth/register", handleRegister);
+app.post("/api/simple-auth/login", handleLogin);
+app.get("/api/simple-auth/me", handleGetMe);
+app.post("/api/simple-auth/logout", handleLogout);
+
+// OAuth routes (keep for backward compatibility)
+registerOAuthRoutes(app);
+
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, timestamp: Date.now() });
+});
+
+// Telegram Bot Webhook endpoint (POST for actual webhook, GET for verification)
+app.post("/api/telegram/webhook", handleTelegramWebhook);
+app.get("/api/telegram/webhook", (_req, res) => {
+  res.json({ ok: true, message: "Telegram webhook endpoint is ready. Use POST method for webhook updates." });
+});
+
+app.use(
+  "/api/trpc",
+  createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  }),
+);
+
+export default app;
