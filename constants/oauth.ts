@@ -46,7 +46,7 @@ export function getApiBaseUrl(): string {
   }
 
   // Fallback to Railway API URL for production
-  return "https://shared-calendar-app-iota.vercel.app";
+  return "https://3000-ivrdo5mun8nf68o42ux1y-d8b3fdf1.manus-asia.computer";
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
