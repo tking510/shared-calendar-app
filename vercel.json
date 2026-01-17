@@ -3,14 +3,7 @@
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "framework": null,
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "@vercel/node@3.0.0"
-    }
-  },
   "rewrites": [
-    { "source": "/api/trpc/:path*", "destination": "/api/trpc/[trpc].ts" },
-    { "source": "/api/health", "destination": "/api/health.ts" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
